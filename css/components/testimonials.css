@@ -1,0 +1,100 @@
+.testimonials {
+  background: var(--color-surface);
+}
+
+.testimonials__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+
+.testimonial-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-2);
+  border: 1px solid var(--color-neutral-100);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition-base);
+}
+
+.testimonial-card:hover {
+  transform: translateY(-3px);
+}
+
+.testimonial-card__stars {
+  display: flex;
+  gap: 2px;
+  color: var(--color-gold-400);
+}
+
+.testimonial-card__stars svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.testimonial-card__quote {
+  font-size: var(--text-body);
+  color: var(--color-neutral-700);
+  line-height: 1.7;
+  font-style: italic;
+  margin-top: var(--space-4);
+  flex: 1;
+  position: relative;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: var(--space-5);
+  border-left: 3px solid var(--color-primary-200);
+}
+
+.testimonial-card__quote::before {
+  content: none;
+}
+
+.testimonial-card__author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-neutral-100);
+}
+
+.testimonial-card__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+
+.testimonial-card__name {
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--color-neutral-900);
+}
+
+.testimonial-card__role {
+  font-size: var(--text-xs);
+  color: var(--color-neutral-500);
+}
+
+@media (max-width: 1023px) {
+  .testimonials__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .testimonials__grid {
+    grid-template-columns: 1fr;
+  }
+}

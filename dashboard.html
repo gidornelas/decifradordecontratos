@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Painel do Decodificador de Contratos — Analise, monitore e gerencie seus contratos.">
+  <meta name="theme-color" content="#1e3a5f">
+  <title>Decodificador — Painel</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width=&quot;100&quot; height=&quot;100&quot; rx=&quot;16&quot; fill=&quot;%232563eb&quot;/><path d=&quot;M65 25H35a6 6 0 00-6 6v38a6 6 0 006 6h30a6 6 0 006-6V31a6 6 0 00-6-6z&quot; fill=&quot;none&quot; stroke=&quot;white&quot; stroke-width=&quot;5&quot;/><line x1=&quot;40&quot; y1=&quot;50&quot; x2=&quot;60&quot; y2=&quot;50&quot; stroke=&quot;white&quot; stroke-width=&quot;5&quot; stroke-linecap=&quot;round&quot;/><line x1=&quot;40&quot; y1=&quot;60&quot; x2=&quot;55&quot; y2=&quot;60&quot; stroke=&quot;white&quot; stroke-width=&quot;5&quot; stroke-linecap=&quot;round&quot;/></svg>" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/dashboard-app.css">
+  <link rel="stylesheet" href="css/dashboard-enhancements.css">
+</head>
+<body>
+
+  <!-- ========== LOGIN SCREEN ========== -->
+  <div class="app--login" id="login-screen">
+    <div class="login">
+      <div class="login__card">
+        <div class="login__logo">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Decodificador
+        </div>
+        <h1 class="login__title">Entre na sua conta</h1>
+        <p class="login__subtitle">Acesse seus contratos e análises</p>
+        <div class="login__error" id="login-error" hidden>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="login-error-text">E-mail ou senha incorretos</span>
+        </div>
+        <form class="login__form" id="login-form">
+          <div class="login__field">
+            <label class="login__label" for="login-email">E-mail</label>
+            <input class="login__input" type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" required>
+          </div>
+          <div class="login__field">
+            <label class="login__label" for="login-password">Senha</label>
+            <input class="login__input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
+          </div>
+          <div class="login__options">
+            <label class="login__checkbox">
+              <input type="checkbox" id="login-remember">
+              <span>Manter conectado</span>
+            </label>
+            <a href="#" class="login__forgot">Esqueceu a senha?</a>
+          </div>
+          <button type="submit" class="login__submit">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Entrar
+          </button>
+        </form>
+        <div class="login__divider">ou</div>
+        <div class="login__oauth">
+          <button type="button" class="login__oauth-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Google
+          </button>
+          <button type="button" class="login__oauth-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            GitHub
+          </button>
+        </div>
+        <p class="login__signup">Não tem conta? <a href="#" id="signup-link">Crie grátis</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== DASHBOARD APP ========== -->
+  <div class="app" id="app" style="display:none">
+    <aside class="app__sidebar">
+      <div class="app__sidebar-head">
+        <a href="index.html" class="app__sidebar-logo">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </a>
+        <span class="app__sidebar-brand">Decodificador</span>
+      </div>
+      <nav class="app__nav" aria-label="Navegação principal">
+        <div class="app__nav-section">
+          <a class="app__nav-item app__nav-item--active" data-page="overview" href="#overview">
+            <span class="app__nav-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </span>
+            <span class="app__nav-text">Visão geral</span>
+          </a>
+          <a class="app__nav-item" data-page="documents" href="#documents">
+            <span class="app__nav-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </span>
+            <span class="app__nav-text">Documentos</span>
+          </a>
+          <a class="app__nav-item" data-page="analyze" href="#analyze">
+            <span class="app__nav-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </span>
+            <span class="app__nav-text">Analisar</span>
+            <span class="app__nav-badge app__nav-badge--danger">3</span>
+          </a>
+        </div>
+        <div class="app__nav-divider"></div>
+        <div class="app__nav-section">
+          <span class="app__nav-section-label">Análise</span>
+          <a class="app__nav-item" data-page="risks" href="#risks">
+            <span class="app__nav-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </span>
+            <span class="app__nav-text">Riscos</span>
+            <span class="app__nav-badge app__nav-badge--danger">3</span>
+          </a>
+          <a class="app__nav-item" data-page="guided" href="#guided">
+            <span class="app__nav-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </span>
+            <span class="app__nav-text">Leitura Guiada</span>
+          </a>
+          <a class="app__nav-item" data-page="results" href="#results">
+            <span class="app__nav-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </span>
+            <span class="app__nav-text">Resultados</span>
+          </a>
+        </div>
+        <div class="app__nav-divider"></div>
+        <div class="app__nav-section">
+          <a class="app__nav-item" data-page="settings" href="#settings">
+            <span class="app__nav-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </span>
+            <span class="app__nav-text">Configurações</span>
+          </a>
+          <a href="index.html" class="app__nav-item" id="logout-link">
+            <span class="app__nav-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </span>
+            <span class="app__nav-text">Sair</span>
+          </a>
+        </div>
+      </nav>
+      <div class="app__sidebar-footer">
+        <div class="app__sidebar-upgrade">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          <div>
+            <div class="app__sidebar-upgrade-title">Upgrade to Pro</div>
+            <div class="app__sidebar-upgrade-text">Contratos ilimitados</div>
+          </div>
+        </div>
+        <div class="app__user" id="user-menu-trigger">
+          <div class="app__avatar">
+            <img src="https://api.dicebear.com/7.x/initials/svg?seed=MS&backgroundColor=2563eb&textColor=ffffff&fontSize=40" alt="Maria Silva" width="36" height="36">
+          </div>
+          <div class="app__user-info">
+            <div class="app__user-name">Maria Silva</div>
+            <div class="app__user-email">maria@exemplo.com</div>
+          </div>
+          <svg class="app__user-more" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </div>
+      </div>
+    </aside>
+
+    <header class="app__topbar">
+      <h1 class="app__topbar-title" id="page-title">Visão geral</h1>
+      <div class="app__search">
+        <svg class="app__search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="app__search-input" type="search" placeholder="Buscar contratos..." aria-label="Buscar contratos">
+      </div>
+      <div class="app__topbar-actions">
+        <button class="app__topbar-btn" aria-label="Notificações" id="notif-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="app__notif-dot"></span>
+        </button>
+        <a href="index.html" class="app__topbar-btn" aria-label="Voltar ao site">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </a>
+      </div>
+    </header>
+
+    <main class="app__content" id="app-content">
+
+      <!-- ===== OVERVIEW ===== -->
+      <div class="app__page app__page--active" id="page-overview">
+        <div class="app__page-head">
+          <h2 class="app__page-title">Painel de Contratos</h2>
+          <div class="app__page-actions">
+            <a href="#analyze" class="app__btn app__btn--primary" data-nav="analyze">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Novo Contrato
+            </a>
+          </div>
+        </div>
+
+        <div class="app__widgets">
+          <div class="app__widget">
+            <div class="app__widget-title">Risco Geral</div>
+            <div class="app__ring app__ring--warning">
+              <div class="app__ring-inner">
+                <span class="app__ring-val">72</span>
+                <span class="app__ring-max">/100</span>
+              </div>
+            </div>
+            <div class="app__ring-info">
+              <div class="app__ring-label">Risco Moderado</div>
+              <div class="app__ring-desc">3 riscos criticos encontrados</div>
+            </div>
+          </div>
+          <div class="app__widget">
+            <div class="app__widget-title">Contratos analisados</div>
+            <div class="app__widget-value">14</div>
+            <div class="app__widget-sub">3 este mes</div>
+          </div>
+          <div class="app__widget">
+            <div class="app__widget-title">Distribuicao de riscos</div>
+            <div class="app__bars">
+              <div class="app__bar-row">
+                <span class="app__bar-label">Criticos</span>
+                <div class="app__bar-track"><div class="app__bar-fill app__bar-fill--danger" style="width:21%"></div></div>
+                <span class="app__bar-count">3</span>
+              </div>
+              <div class="app__bar-row">
+                <span class="app__bar-label">Atencao</span>
+                <div class="app__bar-track"><div class="app__bar-fill app__bar-fill--warning" style="width:29%"></div></div>
+                <span class="app__bar-count">4</span>
+              </div>
+              <div class="app__bar-row">
+                <span class="app__bar-label">Seguros</span>
+                <div class="app__bar-track"><div class="app__bar-fill app__bar-fill--success" style="width:50%"></div></div>
+                <span class="app__bar-count">7</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="app__table">
+          <div class="app__table-head">
+            <span>Documento</span>
+            <span>Tipo</span>
+            <span>Data</span>
+            <span>Risco</span>
+            <span></span>
+          </div>
+          <div class="app__table-row" data-doc="contrato_aluguel">
+            <span class="app__table-doc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> contrato_aluguel.pdf</span>
+            <span class="app__table-type">Aluguel</span>
+            <span class="app__table-date">17 Abr 2026</span>
+            <span class="app__badge app__badge--critical"><span class="app__badge-dot"></span>Critico</span>
+            <span class="app__table-action"><button class="app__table-action-btn" aria-label="Ver detalhes"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span>
+          </div>
+          <div class="app__table-row" data-doc="termos_plataforma">
+            <span class="app__table-doc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> termos_plataforma.pdf</span>
+            <span class="app__table-type">Termos</span>
+            <span class="app__table-date">15 Abr 2026</span>
+            <span class="app__badge app__badge--attention"><span class="app__badge-dot"></span>Atencao</span>
+            <span class="app__table-action"><button class="app__table-action-btn" aria-label="Ver detalhes"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span>
+          </div>
+          <div class="app__table-row" data-doc="politica_privacidade">
+            <span class="app__table-doc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> politica_privacidade.pdf</span>
+            <span class="app__table-type">Privacidade</span>
+            <span class="app__table-date">12 Abr 2026</span>
+            <span class="app__badge app__badge--safe"><span class="app__badge-dot"></span>Seguro</span>
+            <span class="app__table-action"><button class="app__table-action-btn" aria-label="Ver detalhes"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span>
+          </div>
+          <div class="app__table-row" data-doc="contrato_servico">
+            <span class="app__table-doc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> contrato_servico.docx</span>
+            <span class="app__table-type">Servico</span>
+            <span class="app__table-date">10 Abr 2026</span>
+            <span class="app__badge app__badge--attention"><span class="app__badge-dot"></span>Atencao</span>
+            <span class="app__table-action"><button class="app__table-action-btn" aria-label="Ver detalhes"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span>
+          </div>
+          <div class="app__table-row" data-doc="fatura_telecom">
+            <span class="app__table-doc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> fatura_telecom.txt</span>
+            <span class="app__table-type">Fatura</span>
+            <span class="app__table-date">—</span>
+            <span class="app__badge app__badge--processing"><span class="app__badge-dot"></span>Analisando</span>
+            <span class="app__table-action"><button class="app__table-action-btn" aria-label="Ver detalhes"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span>
+          </div>
+        </div>
+
+        <div class="app__overview-grid">
+          <div class="app__quick-actions">
+            <div class="app__section-subtitle">Ações rápidas</div>
+            <div class="app__quick-grid">
+              <button class="app__quick-card" data-nav="analyze">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span>Novo Contrato</span>
+              </button>
+              <button class="app__quick-card" data-nav="risks">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>Ver Riscos</span>
+              </button>
+              <button class="app__quick-card" data-nav="guided">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                <span>Leitura Guiada</span>
+              </button>
+              <button class="app__quick-card" data-nav="results">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span>Resultados</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="app__activity">
+            <div class="app__section-subtitle">Atividade recente</div>
+            <div class="app__activity-list">
+              <div class="app__activity-item">
+                <span class="app__activity-dot app__activity-dot--danger"></span>
+                <div class="app__activity-info">
+                  <div class="app__activity-text"><strong>3 riscos críticos</strong> encontrados em contrato_aluguel.pdf</div>
+                  <div class="app__activity-time">2 horas atrás</div>
+                </div>
+              </div>
+              <div class="app__activity-item">
+                <span class="app__activity-dot app__activity-dot--success"></span>
+                <div class="app__activity-info">
+                  <div class="app__activity-text"><strong>politica_privacidade.pdf</strong> aprovado — sem riscos</div>
+                  <div class="app__activity-time">5 horas atrás</div>
+                </div>
+              </div>
+              <div class="app__activity-item">
+                <span class="app__activity-dot app__activity-dot--warning"></span>
+                <div class="app__activity-info">
+                  <div class="app__activity-text"><strong>contrato_servico.docx</strong> requer atenção em 2 cláusulas</div>
+                  <div class="app__activity-time">1 dia atrás</div>
+                </div>
+              </div>
+              <div class="app__activity-item">
+                <span class="app__activity-dot"></span>
+                <div class="app__activity-info">
+                  <div class="app__activity-text"><strong>termos_plataforma.pdf</strong> enviado para análise</div>
+                  <div class="app__activity-time">2 dias atrás</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== DOCUMENTS ===== -->
+      <div class="app__page" id="page-documents">
+        <div class="app__page-head">
+          <h2 class="app__page-title">Meus Documentos</h2>
+          <div class="app__page-actions">
+            <a href="#analyze" class="app__btn app__btn--primary" data-nav="analyze">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Analisar contrato
+            </a>
+          </div>
+        </div>
+        <div class="app__empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <p class="app__empty-state-title">Todos os documentos em um so lugar</p>
+          <p class="app__empty-state-text">Envie seu primeiro contrato para comecar a analise. Acompanhe riscos, prazos e obrigacoes automaticamente.</p>
+          <a href="#analyze" class="app__btn app__btn--primary" data-nav="analyze">Enviar Contrato</a>
+        </div>
+      </div>
+
+      <!-- ===== ANALYZE ===== -->
+      <div class="app__page" id="page-analyze">
+        <div class="app__page-head">
+          <h2 class="app__page-title">Analisar Contrato</h2>
+          <div class="app__page-actions">
+            <button class="app__btn app__btn--outline" id="new-analysis-btn" style="display:none">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nova analise
+            </button>
+          </div>
+        </div>
+
+        <div class="app__upload-zone" id="upload-zone">
+          <div class="app__upload-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <p class="app__upload-heading">Arraste ou selecione o contrato</p>
+          <p class="app__upload-text">Cole o texto, arraste um arquivo ou clique para selecionar. Aceita PDF, DOCX e TXT.</p>
+          <div class="app__upload-formats">
+            <span class="app__upload-format">PDF</span>
+            <span class="app__upload-format">DOCX</span>
+            <span class="app__upload-format">TXT</span>
+          </div>
+          <input type="file" id="file-input" accept=".pdf,.docx,.txt" style="display:none">
+        </div>
+
+        <div class="app__upload-progress" id="upload-progress">
+          <div class="app__upload-progress-bar">
+            <div class="app__upload-progress-fill" id="progress-fill"></div>
+          </div>
+          <p class="app__upload-progress-text" id="progress-text">Enviando contrato...</p>
+        </div>
+
+        <div class="app__analysis" id="analysis-result">
+          <div class="app__analysis-header">
+            <div class="app__analysis-score">
+              <div class="app__ring app__ring--warning">
+                <div class="app__ring-inner">
+                  <span class="app__analysis-score-val">3.6</span>
+                  <span class="app__analysis-score-max">/10</span>
+                </div>
+              </div>
+            </div>
+            <div class="app__analysis-info">
+              <div class="app__analysis-title">contrato_aluguel.pdf</div>
+              <div class="app__analysis-meta">Contrato de Aluguel &middot; Analisado em 17 Abr 2026 &middot; 12 claúsulas identificadas</div>
+              <div class="app__analysis-breakdown" style="display:flex;gap:3px;height:8px;border-radius:9999px;overflow:hidden">
+                <div style="flex:2;background:var(--color-danger-400);border-radius:4px 0 0 4px"></div>
+                <div style="flex:1;background:var(--color-warning-400)"></div>
+                <div style="flex:1;background:var(--color-success-400)"></div>
+                <div style="flex:4;background:var(--color-neutral-200);border-radius:0 4px 4px 4px"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="app__analysis-section-title">Riscos identificados</div>
+          <div class="app__analysis-risks">
+            <div class="app__risk-card app__risk-card--critical">
+              <div class="app__risk-card-head">
+                <span class="app__risk-card-badge app__risk-card-badge--critical">Critico</span>
+                <span class="app__risk-card-clause">Clausula 8.3</span>
+              </div>
+              <div class="app__risk-card-title">Multa rescisoria acima do padrao</div>
+              <div class="app__risk-card-impact">O contratante pagara <strong>100% dos valores restantes</strong> caso cancele, tornando a saida do contrato financeiramente inviavel.</div>
+            </div>
+            <div class="app__risk-card app__risk-card--critical">
+              <div class="app__risk-card-head">
+                <span class="app__risk-card-badge app__risk-card-badge--critical">Critico</span>
+                <span class="app__risk-card-clause">Clausula 4.1</span>
+              </div>
+              <div class="app__risk-card-title">Reajuste sem limite definido</div>
+              <div class="app__risk-card-impact">O fornecedor pode <strong>aumentar o preco a qualquer momento</strong> com apenas 48h de aviso, sem criterio objetivo.</div>
+            </div>
+            <div class="app__risk-card app__risk-card--attention">
+              <div class="app__risk-card-head">
+                <span class="app__risk-card-badge app__risk-card-badge--attention">Atencao</span>
+                <span class="app__risk-card-clause">Clausula 6.2</span>
+              </div>
+              <div class="app__risk-card-title">Custos operacionais nao definidos</div>
+              <div class="app__risk-card-impact">A expressao "custos operacionais" <strong>nao esta definida</strong> no contrato, permitindo cobranca de valores arbitrarios.</div>
+            </div>
+            <div class="app__risk-card app__risk-card--safe">
+              <div class="app__risk-card-head">
+                <span class="app__risk-card-badge app__risk-card-badge--safe">Seguro</span>
+                <span class="app__risk-card-clause">Clausula 2.1</span>
+              </div>
+              <div class="app__risk-card-title">Descricao dos servicos</div>
+              <div class="app__risk-card-impact">Os servicos estao <strong>descritos no Anexo I</strong>, com escopo claro e objetivo.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== RISKS VISUALIZER ===== -->
+      <div class="app__page" id="page-risks">
+        <div class="app__page-head">
+          <h2 class="app__page-title">Visualizador de Riscos</h2>
+          <div class="app__page-actions">
+            <select class="app__select" id="risk-doc-select">
+              <option>contrato_aluguel.pdf</option>
+              <option>termos_plataforma.pdf</option>
+              <option>politica_privacidade.pdf</option>
+              <option>contrato_servico.docx</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="app__risk-viz">
+          <div class="app__risk-viz-sidebar">
+            <div class="app__risk-legend">
+              <div class="app__risk-legend-title">Níveis de risco</div>
+              <div class="app__risk-legend-item">
+                <span class="app__risk-legend-dot app__risk-legend-dot--critical"></span>
+                <div>
+                  <div class="app__risk-legend-label">Risco Crítico</div>
+                  <div class="app__risk-legend-desc">Prejuízo financeiro, perda de direitos ou obrigações abusivas</div>
+                </div>
+              </div>
+              <div class="app__risk-legend-item">
+                <span class="app__risk-legend-dot app__risk-legend-dot--attention"></span>
+                <div>
+                  <div class="app__risk-legend-label">Atenção</div>
+                  <div class="app__risk-legend-desc">Armadilhas ou condições desfavoráveis</div>
+                </div>
+              </div>
+              <div class="app__risk-legend-item">
+                <span class="app__risk-legend-dot app__risk-legend-dot--safe"></span>
+                <div>
+                  <div class="app__risk-legend-label">Seguro</div>
+                  <div class="app__risk-legend-desc">Cláusula padrão, sem riscos identificados</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="app__risk-counts">
+              <div class="app__risk-count app__risk-count--critical">
+                <div class="app__risk-count-num">3</div>
+                <div class="app__risk-count-label">Críticos</div>
+              </div>
+              <div class="app__risk-count app__risk-count--attention">
+                <div class="app__risk-count-num">2</div>
+                <div class="app__risk-count-label">Atenção</div>
+              </div>
+              <div class="app__risk-count app__risk-count--safe">
+                <div class="app__risk-count-num">7</div>
+                <div class="app__risk-count-label">Seguros</div>
+              </div>
+            </div>
+
+            <div class="app__risk-score-panel">
+              <div class="app__ring app__ring--warning">
+                <div class="app__ring-inner">
+                  <span class="app__ring-val">3.6</span>
+                  <span class="app__ring-max">/10</span>
+                </div>
+              </div>
+              <div class="app__risk-score-label">Risco Alto</div>
+              <div class="app__risk-score-desc">contrato_aluguel.pdf</div>
+            </div>
+          </div>
+
+          <div class="app__risk-viz-main">
+            <div class="app__risk-filters">
+              <button class="app__risk-filter app__risk-filter--active" data-risk-filter="all">Todos</button>
+              <button class="app__risk-filter" data-risk-filter="critical">Críticos</button>
+              <button class="app__risk-filter" data-risk-filter="attention">Atenção</button>
+              <button class="app__risk-filter" data-risk-filter="safe">Seguros</button>
+            </div>
+
+            <div class="app__risk-group-title">Multas e Penalidades</div>
+            <div class="app__risk-group" data-risk-group>
+              <div class="app__risk-card app__risk-card--critical" data-risk-level="critical">
+                <div class="app__risk-card-head">
+                  <span class="app__risk-card-badge app__risk-card-badge--critical">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Crítico
+                  </span>
+                  <span class="app__risk-card-clause">Cláusula 4.2</span>
+                </div>
+                <div class="app__risk-card-body">
+                  <h3 class="app__risk-card-title">Multa rescisória acima do padrão</h3>
+                  <p class="app__risk-card-impact">Em caso de cancelamento, você pagará <strong>3x o valor do aluguel como multa</strong>. O padrão de mercado é de 1x a 2x. Essa cláusula pode representar um custo significativo.</p>
+                </div>
+                <div class="app__risk-card-footer">
+                  <span class="app__risk-card-source">"...multa correspondente a 3 (três) vezes o valor da locação vigente à época da rescisão..."</span>
+                  <button class="app__risk-card-action" data-action="negotiate">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Negociar
+                  </button>
+                </div>
+              </div>
+
+              <div class="app__risk-card app__risk-card--critical" data-risk-level="critical">
+                <div class="app__risk-card-head">
+                  <span class="app__risk-card-badge app__risk-card-badge--critical">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Crítico
+                  </span>
+                  <span class="app__risk-card-clause">Cláusula 8.3</span>
+                </div>
+                <div class="app__risk-card-body">
+                  <h3 class="app__risk-card-title">Reajuste sem limite definido</h3>
+                  <p class="app__risk-card-impact">O contrato permite <strong>reajuste anual sem teto percentual</strong>. O proprietário pode aumentar o valor além da inflação ou de índices de mercado.</p>
+                </div>
+                <div class="app__risk-card-footer">
+                  <span class="app__risk-card-source">"...o valor da locação será reajustado anualmente conforme critério do locador..."</span>
+                  <button class="app__risk-card-action" data-action="negotiate">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Negociar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="app__risk-group-title">Obrigações</div>
+            <div class="app__risk-group" data-risk-group>
+              <div class="app__risk-card app__risk-card--critical" data-risk-level="critical">
+                <div class="app__risk-card-head">
+                  <span class="app__risk-card-badge app__risk-card-badge--critical">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Crítico
+                  </span>
+                  <span class="app__risk-card-clause">Cláusula 5.1</span>
+                </div>
+                <div class="app__risk-card-body">
+                  <h3 class="app__risk-card-title">Responsabilidade por danos pré-existentes</h3>
+                  <p class="app__risk-card-impact">Você será responsável por <strong>todas as reformas</strong>, incluindo problemas estruturais e infiltrações que já existiam antes da locação.</p>
+                </div>
+                <div class="app__risk-card-footer">
+                  <span class="app__risk-card-source">"...o locatário se responsabiliza por todas as reformas e reparos necessários no imóvel..."</span>
+                  <button class="app__risk-card-action" data-action="negotiate">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Negociar
+                  </button>
+                </div>
+              </div>
+
+              <div class="app__risk-card app__risk-card--attention" data-risk-level="attention">
+                <div class="app__risk-card-head">
+                  <span class="app__risk-card-badge app__risk-card-badge--attention">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    Atenção
+                  </span>
+                  <span class="app__risk-card-clause">Cláusula 6.4</span>
+                </div>
+                <div class="app__risk-card-body">
+                  <h3 class="app__risk-card-title">Prazo de entrega do imóvel não especificado</h3>
+                  <p class="app__risk-card-impact">O contrato não define um <strong>prazo máximo para entrega das chaves</strong>. Atrasos podem ocorrer sem penalidade para o proprietário.</p>
+                </div>
+                <div class="app__risk-card-footer">
+                  <span class="app__risk-card-source">"...a entrega do imóvel ocorrerá em data a ser definida pelo locador..."</span>
+                  <button class="app__risk-card-action" data-action="review">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Revisar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="app__risk-group-title">Renovação e Pagamento</div>
+            <div class="app__risk-group" data-risk-group>
+              <div class="app__risk-card app__risk-card--attention" data-risk-level="attention">
+                <div class="app__risk-card-head">
+                  <span class="app__risk-card-badge app__risk-card-badge--attention">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    Atenção
+                  </span>
+                  <span class="app__risk-card-clause">Cláusula 7.1</span>
+                </div>
+                <div class="app__risk-card-body">
+                  <h3 class="app__risk-card-title">Renovação automática sem aviso</h3>
+                  <p class="app__risk-card-impact">O contrato se renova automaticamente. Para cancelar, você precisa <strong>manifestar-se com 45 dias de antecedência</strong> — prazo acima do comum.</p>
+                </div>
+                <div class="app__risk-card-footer">
+                  <span class="app__risk-card-source">"...o contrato será renovado automaticamente por períodos iguais, salvo manifestação em contrário com 45 dias de antecedência..."</span>
+                  <button class="app__risk-card-action" data-action="review">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Revisar
+                  </button>
+                </div>
+              </div>
+
+              <div class="app__risk-card app__risk-card--safe" data-risk-level="safe">
+                <div class="app__risk-card-head">
+                  <span class="app__risk-card-badge app__risk-card-badge--safe">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Seguro
+                  </span>
+                  <span class="app__risk-card-clause">Cláusula 9.1</span>
+                </div>
+                <div class="app__risk-card-body">
+                  <h3 class="app__risk-card-title">Forma de pagamento padrão</h3>
+                  <p class="app__risk-card-impact">O aluguel deve ser pago até o dia 10 de cada mês via depósito bancário. <strong>Condição padrão</strong> sem riscos identificados.</p>
+                </div>
+                <div class="app__risk-card-footer">
+                  <span class="app__risk-card-source">"...o aluguel será pago até o dia 10 de cada mês, mediante depósito em conta bancária indicada pelo locador..."</span>
+                  <button class="app__risk-card-action app__risk-card-action--approved" data-action="approve">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Aprovado
+                  </button>
+                </div>
+              </div>
+
+              <div class="app__risk-card app__risk-card--safe" data-risk-level="safe">
+                <div class="app__risk-card-head">
+                  <span class="app__risk-card-badge app__risk-card-badge--safe">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Seguro
+                  </span>
+                  <span class="app__risk-card-clause">Cláusula 3.1</span>
+                </div>
+                <div class="app__risk-card-body">
+                  <h3 class="app__risk-card-title">Prazo de locação</h3>
+                  <p class="app__risk-card-impact">Prazo de <strong>30 meses</strong>, de março de 2025 a setembro de 2027. Conforme o padrão para contratos de aluguel residencial.</p>
+                </div>
+                <div class="app__risk-card-footer">
+                  <span class="app__risk-card-source">"...o prazo de locação é fixado em 30 (trinta) meses..."</span>
+                  <button class="app__risk-card-action app__risk-card-action--approved" data-action="approve">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Aprovado
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== GUIDED READING ===== -->
+      <div class="app__page" id="page-guided">
+        <div class="app__page-head">
+          <h2 class="app__page-title">Leitura Guiada</h2>
+          <div class="app__page-actions">
+            <select class="app__select" id="guided-doc-select">
+              <option>contrato_aluguel.pdf</option>
+              <option>termos_plataforma.pdf</option>
+              <option>politica_privacidade.pdf</option>
+              <option>contrato_servico.docx</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="app__guided">
+          <div class="app__guided-tabs">
+            <button class="app__guided-tab app__guided-tab--active" data-guided-tab="resumo">Resumo</button>
+            <button class="app__guided-tab" data-guided-tab="clausulas">Cláusulas</button>
+            <button class="app__guided-tab" data-guided-tab="checklist">Checklist</button>
+          </div>
+
+          <div class="app__guided-progress">
+            <div class="app__guided-progress-bar">
+              <div class="app__guided-progress-fill" id="guided-progress-fill"></div>
+            </div>
+            <span class="app__guided-progress-text">1 de 4 revisadas</span>
+          </div>
+
+          <!-- RESUMO TAB -->
+          <div class="app__guided-content app__guided-content--active" id="guided-resumo">
+            <div class="app__guided-summary">
+              <div class="app__guided-summary-header">
+                <div class="app__ring app__ring--warning">
+                  <div class="app__ring-inner">
+                    <span class="app__ring-val">3.6</span>
+                    <span class="app__ring-max">/10</span>
+                  </div>
+                </div>
+                <div class="app__guided-summary-info">
+                  <div class="app__guided-summary-title">contrato_aluguel.pdf</div>
+                  <div class="app__guided-summary-meta">Contrato de Aluguel Residencial · 12 cláusulas · Analisado em 17 Abr 2026</div>
+                  <p class="app__guided-summary-text">Contrato de aluguel residencial com 12 cláusulas. <strong>3 apresentam riscos altos</strong> relacionados a multa rescisória, reajuste sem teto e responsabilidade por danos pré-existentes. 2 cláusulas requerem atenção.</p>
+                </div>
+              </div>
+              <div class="app__guided-breakdown">
+                <div class="app__guided-breakdown-bar">
+                  <div class="app__guided-breakdown-seg" style="flex:2;background:var(--color-danger-400)"></div>
+                  <div class="app__guided-breakdown-seg" style="flex:1;background:var(--color-warning-400)"></div>
+                  <div class="app__guided-breakdown-seg" style="flex:1;background:var(--color-success-400)"></div>
+                  <div class="app__guided-breakdown-seg" style="flex:4;background:var(--color-neutral-200)"></div>
+                </div>
+                <div class="app__guided-breakdown-legend">
+                  <span class="app__guided-breakdown-item"><span style="background:var(--color-danger-400)"></span>2 Críticos</span>
+                  <span class="app__guided-breakdown-item"><span style="background:var(--color-warning-400)"></span>1 Atenção</span>
+                  <span class="app__guided-breakdown-item"><span style="background:var(--color-success-400)"></span>1 Seguro</span>
+                  <span class="app__guided-breakdown-item"><span style="background:var(--color-neutral-200)"></span>8 Neutros</span>
+                </div>
+              </div>
+              <div class="app__guided-recommendations">
+                <div class="app__guided-rec-title">Recomendações</div>
+                <div class="app__guided-rec">
+                  <span class="app__guided-rec-icon app__guided-rec-icon--danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  </span>
+                  <div>
+                    <strong>Negociar cláusula 4.2</strong> — Multa de 3x está acima do mercado. Sugerir redução para 1x.
+                  </div>
+                </div>
+                <div class="app__guided-rec">
+                  <span class="app__guided-rec-icon app__guided-rec-icon--danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  </span>
+                  <div>
+                    <strong>Incluir teto no reajuste (Cl. 8.3)</strong> — Vincular ao IGP-M ou IPCA com limite anual.
+                  </div>
+                </div>
+                <div class="app__guided-rec">
+                  <span class="app__guided-rec-icon app__guided-rec-icon--warning">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  </span>
+                  <div>
+                    <strong>Criar vistoria fotográfica (Cl. 5.1)</strong> — Documentar o estado do imóvel antes de assinar.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CLAUSULAS TAB -->
+          <div class="app__guided-content" id="guided-clausulas">
+            <div class="app__guided-clauses">
+              <div class="app__guided-clause app__guided-clause--critical" id="g-clause-1">
+                <button class="app__guided-clause-trigger" aria-expanded="false" aria-controls="g-clause-1-detail">
+                  <span class="app__guided-clause-num">1</span>
+                  <div class="app__guided-clause-preview">
+                    <div class="app__guided-clause-title">Multa rescisória — Cláusula 4.2</div>
+                    <div class="app__guided-clause-original">"...multa correspondente a 3 (três) vezes o valor da locação vigente à época da rescisão..."</div>
+                    <div class="app__guided-clause-badges">
+                      <span class="app__guided-clause-badge app__guided-clause-badge--critical">Risco Crítico</span>
+                    </div>
+                  </div>
+                  <svg class="app__guided-clause-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="app__guided-clause-detail" id="g-clause-1-detail" role="region">
+                  <div class="app__guided-detail-inner">
+                    <div class="app__guided-detail-col">
+                      <span class="app__guided-detail-label">Texto original</span>
+                      <div class="app__guided-detail-original">O LOCATÁRIO estará sujeito ao pagamento de <span class="hl-risk">multa equivalente a 3 (três) vezes o valor da locação</span> vigente à época da rescisão, <span class="hl-risk">independentemente do motivo</span> da desocupação.</div>
+                      <div class="app__guided-detail-confidence app__guided-detail-confidence--low">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        <span>Confiança baixa — Recomendamos negociar esta cláusula antes de assinar</span>
+                      </div>
+                    </div>
+                    <div class="app__guided-detail-col">
+                      <span class="app__guided-detail-label">Explicação simplificada</span>
+                      <p class="app__guided-detail-simple">Se você cancelar o contrato por <strong>qualquer motivo</strong>, pagará uma multa de <strong>3 meses de aluguel</strong>. Isso inclui casos em que o proprietário não cumpriu as obrigações dele. O padrão de mercado é de 1 a 2 meses.</p>
+                      <div class="app__guided-detail-why">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span>Essa multa pode representar mais de R$ 6.000 em um aluguel de R$ 2.000. Mesmo que você precise sair por justa causa, o valor será cobrado.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="app__guided-clause app__guided-clause--critical" id="g-clause-2">
+                <button class="app__guided-clause-trigger" aria-expanded="false" aria-controls="g-clause-2-detail">
+                  <span class="app__guided-clause-num">2</span>
+                  <div class="app__guided-clause-preview">
+                    <div class="app__guided-clause-title">Reajuste sem teto — Cláusula 8.3</div>
+                    <div class="app__guided-clause-original">"...o valor da locação será reajustado anualmente conforme critério do locador..."</div>
+                    <div class="app__guided-clause-badges">
+                      <span class="app__guided-clause-badge app__guided-clause-badge--critical">Risco Crítico</span>
+                    </div>
+                  </div>
+                  <svg class="app__guided-clause-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="app__guided-clause-detail" id="g-clause-2-detail" role="region">
+                  <div class="app__guided-detail-inner">
+                    <div class="app__guided-detail-col">
+                      <span class="app__guided-detail-label">Texto original</span>
+                      <div class="app__guided-detail-original">O valor da locação será <span class="hl-risk">reajustado anualmente conforme critério exclusivo do locador</span>, <span class="hl-risk">sem limite percentual</span> pré-estabelecido.</div>
+                      <div class="app__guided-detail-confidence app__guided-detail-confidence--low">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        <span>Confiança baixa — Sem teto, o reajuste pode ser abusivo</span>
+                      </div>
+                    </div>
+                    <div class="app__guided-detail-col">
+                      <span class="app__guided-detail-label">Explicação simplificada</span>
+                      <p class="app__guided-detail-simple">O proprietário pode <strong>aumentar o aluguel pelo valor que quiser</strong> a cada ano. Não há referência ao IGP-M, IPCA ou qualquer índice oficial. Um aluguel de R$ 2.000 pode virar R$ 3.000 de um ano para o outro.</p>
+                      <div class="app__guided-detail-why">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span>Sem um índice atrelado, o reajuste é livre e pode tornar o imóvel inacessível sem que você tenha cometido nenhuma infração.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="app__guided-clause app__guided-clause--attention" id="g-clause-3">
+                <button class="app__guided-clause-trigger" aria-expanded="false" aria-controls="g-clause-3-detail">
+                  <span class="app__guided-clause-num">3</span>
+                  <div class="app__guided-clause-preview">
+                    <div class="app__guided-clause-title">Renovação automática — Cláusula 7.1</div>
+                    <div class="app__guided-clause-original">"...renovado automaticamente por períodos iguais, salvo manifestação com 45 dias..."</div>
+                    <div class="app__guided-clause-badges">
+                      <span class="app__guided-clause-badge app__guided-clause-badge--attention">Atenção</span>
+                    </div>
+                  </div>
+                  <svg class="app__guided-clause-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="app__guided-clause-detail" id="g-clause-3-detail" role="region">
+                  <div class="app__guided-detail-inner">
+                    <div class="app__guided-detail-col">
+                      <span class="app__guided-detail-label">Texto original</span>
+                      <div class="app__guided-detail-original">O presente contrato será <span class="hl-caution">renovado automaticamente por períodos iguais</span>, salvo manifestação em contrário por qualquer das partes com <span class="hl-caution">antecedência mínima de 45 (quarenta e cinco) dias</span>.</div>
+                      <div class="app__guided-detail-confidence app__guided-detail-confidence--medium">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span>Atenção — Marque no calendário o prazo de 45 dias antes do vencimento</span>
+                      </div>
+                    </div>
+                    <div class="app__guided-detail-col">
+                      <span class="app__guided-detail-label">Explicação simplificada</span>
+                      <p class="app__guided-detail-simple">O contrato se renova sozinho. Se você quiser sair, precisa avisar com <strong>45 dias de antecedência</strong> — mais de um mês antes. Se esquecer, fica preso por mais um período integral.</p>
+                      <div class="app__guided-detail-why">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span>Prazos de renovação automática são armadilhas comuns. Defina um lembrete 60 dias antes do vencimento.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="app__guided-clause app__guided-clause--safe" id="g-clause-4">
+                <button class="app__guided-clause-trigger" aria-expanded="false" aria-controls="g-clause-4-detail">
+                  <span class="app__guided-clause-num">4</span>
+                  <div class="app__guided-clause-preview">
+                    <div class="app__guided-clause-title">Prazo de locação — Cláusula 3.1</div>
+                    <div class="app__guided-clause-original">"...o prazo de locação é fixado em 30 (trinta) meses, com início em 01/03/2025..."</div>
+                    <div class="app__guided-clause-badges">
+                      <span class="app__guided-clause-badge app__guided-clause-badge--safe">Seguro</span>
+                    </div>
+                  </div>
+                  <svg class="app__guided-clause-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="app__guided-clause-detail" id="g-clause-4-detail" role="region">
+                  <div class="app__guided-detail-inner">
+                    <div class="app__guided-detail-col">
+                      <span class="app__guided-detail-label">Texto original</span>
+                      <div class="app__guided-detail-original">O prazo de locação é <span class="hl-safe">fixado em 30 (trinta) meses</span>, com início em 01/03/2025 e término em 01/09/2027, data a partir da qual o locatário deverá restituir o imóvel.</div>
+                      <div class="app__guided-detail-confidence app__guided-detail-confidence--high">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        <span>Seguro — Cláusula padrão para contratos de aluguel residencial</span>
+                      </div>
+                    </div>
+                    <div class="app__guided-detail-col">
+                      <span class="app__guided-detail-label">Explicação simplificada</span>
+                      <p class="app__guided-detail-simple">O contrato tem duração de <strong>30 meses</strong>, de março de 2025 a setembro de 2027. Esse é o prazo padrão para contratos de aluguel residencial conforme a Lei do Inquilinato.</p>
+                      <div class="app__guided-detail-why">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span>Saber a data exata de término ajuda a planejar a mudança ou renegociação com antecedência.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="app__guided-nav">
+              <button class="app__guided-nav-btn" type="button" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Anterior
+              </button>
+              <div class="app__guided-nav-dots">
+                <span class="app__guided-nav-dot app__guided-nav-dot--active"></span>
+                <span class="app__guided-nav-dot"></span>
+                <span class="app__guided-nav-dot"></span>
+                <span class="app__guided-nav-dot"></span>
+              </div>
+              <button class="app__guided-nav-btn" type="button">
+                Próxima
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- CHECKLIST TAB -->
+          <div class="app__guided-content" id="guided-checklist">
+            <div class="app__checklist">
+              <div class="app__checklist-item">
+                <label class="app__checklist-label">
+                  <input type="checkbox" class="app__checklist-input">
+                  <span class="app__checklist-box"></span>
+                  <div>
+                    <div class="app__checklist-title">Negociar multa rescisória (Cl. 4.2)</div>
+                    <div class="app__checklist-desc">Solicitar redução de 3x para 1x o valor do aluguel</div>
+                  </div>
+                </label>
+              </div>
+              <div class="app__checklist-item">
+                <label class="app__checklist-label">
+                  <input type="checkbox" class="app__checklist-input">
+                  <span class="app__checklist-box"></span>
+                  <div>
+                    <div class="app__checklist-title">Incluir teto de reajuste (Cl. 8.3)</div>
+                    <div class="app__checklist-desc">Propor vinculação ao IGP-M com limite de 10% ao ano</div>
+                  </div>
+                </label>
+              </div>
+              <div class="app__checklist-item">
+                <label class="app__checklist-label">
+                  <input type="checkbox" class="app__checklist-input">
+                  <span class="app__checklist-box"></span>
+                  <div>
+                    <div class="app__checklist-title">Fazer vistoria fotográfica (Cl. 5.1)</div>
+                    <div class="app__checklist-desc">Documentar estado do imóvel com fotos e vídeo antes de assinar</div>
+                  </div>
+                </label>
+              </div>
+              <div class="app__checklist-item">
+                <label class="app__checklist-label">
+                  <input type="checkbox" class="app__checklist-input">
+                  <span class="app__checklist-box"></span>
+                  <div>
+                    <div class="app__checklist-title">Definir prazo de entrega (Cl. 6.4)</div>
+                    <div class="app__checklist-desc">Solicitar data limite para entrega das chaves</div>
+                  </div>
+                </label>
+              </div>
+              <div class="app__checklist-item">
+                <label class="app__checklist-label">
+                  <input type="checkbox" class="app__checklist-input">
+                  <span class="app__checklist-box"></span>
+                  <div>
+                    <div class="app__checklist-title">Criar lembrete de renovação (Cl. 7.1)</div>
+                    <div class="app__checklist-desc">Agendar alerta 60 dias antes do vencimento para evitar renovação automática</div>
+                  </div>
+                </label>
+              </div>
+              <div class="app__checklist-item">
+                <label class="app__checklist-label">
+                  <input type="checkbox" class="app__checklist-input">
+                  <span class="app__checklist-box"></span>
+                  <div>
+                    <div class="app__checklist-title">Verificar forma de pagamento (Cl. 9.1)</div>
+                    <div class="app__checklist-desc">Confirmar dados bancários do locador antes do primeiro pagamento</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <div class="app__checklist-summary">
+              <span>0 de 6 itens concluídos</span>
+              <div class="app__checklist-progress-bar">
+                <div class="app__checklist-progress-fill" id="checklist-progress-fill"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ANALYSIS RESULTS ===== -->
+      <div class="app__page" id="page-results">
+        <div class="app__page-head">
+          <h2 class="app__page-title">Resultados da Análise</h2>
+          <div class="app__page-actions">
+            <select class="app__select" id="results-doc-select">
+              <option>contrato_aluguel.pdf</option>
+              <option>termos_plataforma.pdf</option>
+              <option>politica_privacidade.pdf</option>
+              <option>contrato_servico.docx</option>
+            </select>
+            <button class="app__btn app__btn--outline" id="export-pdf-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exportar PDF
+            </button>
+          </div>
+        </div>
+
+        <div class="app__results">
+          <div class="app__results-header">
+            <div class="app__results-score">
+              <div class="app__ring app__ring--warning">
+                <div class="app__ring-inner">
+                  <span class="app__ring-val">3.6</span>
+                  <span class="app__ring-max">/10</span>
+                </div>
+              </div>
+              <div>
+                <div class="app__results-score-label">Risco Alto</div>
+                <div class="app__results-score-desc">Requer atenção antes de assinar</div>
+              </div>
+            </div>
+            <div class="app__results-meta">
+              <div class="app__results-meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <div>
+                  <div class="app__results-meta-label">Documento</div>
+                  <div class="app__results-meta-value">contrato_aluguel.pdf</div>
+                </div>
+              </div>
+              <div class="app__results-meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <div>
+                  <div class="app__results-meta-label">Data</div>
+                  <div class="app__results-meta-value">17 Abr 2026</div>
+                </div>
+              </div>
+              <div class="app__results-meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <div>
+                  <div class="app__results-meta-label">Tipo</div>
+                  <div class="app__results-meta-value">Aluguel Residencial</div>
+                </div>
+              </div>
+              <div class="app__results-meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                <div>
+                  <div class="app__results-meta-label">Cláusulas</div>
+                  <div class="app__results-meta-value">12 identificadas</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="app__results-section">
+            <div class="app__analysis-section-title">Resumo Executivo</div>
+            <div class="app__results-executive">
+              <p>Este é um <strong>contrato de aluguel residencial</strong> com duração de 30 meses. A análise identificou <strong>3 riscos críticos</strong> que precisam ser negociados antes da assinatura: multa rescisória acima do mercado (3x), reajuste sem teto definido e responsabilidade por danos pré-existentes. Além disso, 2 cláusulas requerem atenção.</p>
+              <div class="app__results-breakdown">
+                <div class="app__results-breakdown-bar">
+                  <div style="flex:2;background:var(--color-danger-400);border-radius:4px 0 0 4px"></div>
+                  <div style="flex:1;background:var(--color-warning-400)"></div>
+                  <div style="flex:1;background:var(--color-success-400)"></div>
+                  <div style="flex:4;background:var(--color-neutral-200);border-radius:0 4px 4px 0"></div>
+                </div>
+                <div class="app__results-breakdown-legend">
+                  <span><span style="background:var(--color-danger-400)"></span>3 Críticos</span>
+                  <span><span style="background:var(--color-warning-400)"></span>2 Atenção</span>
+                  <span><span style="background:var(--color-success-400)"></span>1 Seguro</span>
+                  <span><span style="background:var(--color-neutral-200)"></span>6 Neutros</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="app__results-section">
+            <div class="app__analysis-section-title">Cláusulas Identificadas</div>
+            <div class="app__results-clauses">
+              <div class="app__results-clause">
+                <span class="app__results-clause-indicator app__results-clause-indicator--danger"></span>
+                <div class="app__results-clause-content">
+                  <div class="app__results-clause-title">Cláusula 4.2 — Multa rescisória</div>
+                  <div class="app__results-clause-desc">Multa de 3x o aluguel em caso de rescisão. Acima do padrão de mercado (1x-2x).</div>
+                </div>
+                <span class="app__badge app__badge--critical"><span class="app__badge-dot"></span>Crítico</span>
+              </div>
+              <div class="app__results-clause">
+                <span class="app__results-clause-indicator app__results-clause-indicator--danger"></span>
+                <div class="app__results-clause-content">
+                  <div class="app__results-clause-title">Cláusula 8.3 — Reajuste sem teto</div>
+                  <div class="app__results-clause-desc">Reajuste anual sem limite percentual. Pode gerar aumento abusivo.</div>
+                </div>
+                <span class="app__badge app__badge--critical"><span class="app__badge-dot"></span>Crítico</span>
+              </div>
+              <div class="app__results-clause">
+                <span class="app__results-clause-indicator app__results-clause-indicator--danger"></span>
+                <div class="app__results-clause-content">
+                  <div class="app__results-clause-title">Cláusula 5.1 — Danos pré-existentes</div>
+                  <div class="app__results-clause-desc">Responsabilidade por todas as reformas, incluindo problemas anteriores.</div>
+                </div>
+                <span class="app__badge app__badge--critical"><span class="app__badge-dot"></span>Crítico</span>
+              </div>
+              <div class="app__results-clause">
+                <span class="app__results-clause-indicator app__results-clause-indicator--warning"></span>
+                <div class="app__results-clause-content">
+                  <div class="app__results-clause-title">Cláusula 6.4 — Prazo de entrega</div>
+                  <div class="app__results-clause-desc">Sem prazo definido para entrega das chaves.</div>
+                </div>
+                <span class="app__badge app__badge--attention"><span class="app__badge-dot"></span>Atenção</span>
+              </div>
+              <div class="app__results-clause">
+                <span class="app__results-clause-indicator app__results-clause-indicator--warning"></span>
+                <div class="app__results-clause-content">
+                  <div class="app__results-clause-title">Cláusula 7.1 — Renovação automática</div>
+                  <div class="app__results-clause-desc">Renovação sem aviso prévio. Prazo de 45 dias para cancelar.</div>
+                </div>
+                <span class="app__badge app__badge--attention"><span class="app__badge-dot"></span>Atenção</span>
+              </div>
+              <div class="app__results-clause">
+                <span class="app__results-clause-indicator app__results-clause-indicator--success"></span>
+                <div class="app__results-clause-content">
+                  <div class="app__results-clause-title">Cláusula 9.1 — Pagamento</div>
+                  <div class="app__results-clause-desc">Dia 10 via depósito bancário. Condição padrão.</div>
+                </div>
+                <span class="app__badge app__badge--safe"><span class="app__badge-dot"></span>Seguro</span>
+              </div>
+              <div class="app__results-clause">
+                <span class="app__results-clause-indicator app__results-clause-indicator--success"></span>
+                <div class="app__results-clause-content">
+                  <div class="app__results-clause-title">Cláusula 3.1 — Prazo locatício</div>
+                  <div class="app__results-clause-desc">30 meses. Padrão para aluguel residencial.</div>
+                </div>
+                <span class="app__badge app__badge--safe"><span class="app__badge-dot"></span>Seguro</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="app__results-section">
+            <div class="app__analysis-section-title">Mapa de Obrigações</div>
+            <div class="app__results-obligations">
+              <div class="app__results-obl app__results-obl--you">
+                <div class="app__results-obl-head">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span>Suas obrigações (Locatário)</span>
+                </div>
+                <ul class="app__results-obl-list">
+                  <li>Pagar aluguel até dia 10 de cada mês</li>
+                  <li>Manter o imóvel em bom estado</li>
+                  <li>Pagar multa de 3x em caso de rescisão</li>
+                  <li>Avisar com 45 dias para não renovar</li>
+                  <li>Cobrir todas as reformas necessárias</li>
+                </ul>
+              </div>
+              <div class="app__results-obl app__results-obl--them">
+                <div class="app__results-obl-head">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  <span>Obrigações do locador</span>
+                </div>
+                <ul class="app__results-obl-list">
+                  <li>Entregar o imóvel em data a definir</li>
+                  <li>Garantiar tranquilidade no uso do imóvel</li>
+                  <li>Manter a estrutura do imóvel</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="app__results-section">
+            <div class="app__analysis-section-title">Prazos e Datas Importantes</div>
+            <div class="app__results-deadlines">
+              <div class="app__results-deadline">
+                <div class="app__results-deadline-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div class="app__results-deadline-info">
+                  <div class="app__results-deadline-title">Início do contrato</div>
+                  <div class="app__results-deadline-date">01 Mar 2025</div>
+                </div>
+              </div>
+              <div class="app__results-deadline">
+                <div class="app__results-deadline-icon app__results-deadline-icon--danger">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="app__results-deadline-info">
+                  <div class="app__results-deadline-title">Término do contrato</div>
+                  <div class="app__results-deadline-date">01 Set 2027</div>
+                </div>
+              </div>
+              <div class="app__results-deadline">
+                <div class="app__results-deadline-icon app__results-deadline-icon--warning">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div class="app__results-deadline-info">
+                  <div class="app__results-deadline-title">Aviso para não renovar</div>
+                  <div class="app__results-deadline-date">18 Jul 2027 (45 dias antes)</div>
+                </div>
+              </div>
+              <div class="app__results-deadline">
+                <div class="app__results-deadline-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <div class="app__results-deadline-info">
+                  <div class="app__results-deadline-title">Pagamento mensal</div>
+                  <div class="app__results-deadline-date">Dia 10 de cada mês</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="app__results-section">
+            <div class="app__analysis-section-title">Veredicto</div>
+            <div class="app__results-verdict">
+              <div class="app__results-verdict-icon app__results-verdict-icon--warning">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div class="app__results-verdict-content">
+                <div class="app__results-verdict-title">Não assine sem negociar</div>
+                <p class="app__results-verdict-text">Este contrato contém <strong>3 cláusulas de risco crítico</strong> que podem gerar prejuízos significativos. Recomendamos negociar as cláusulas 4.2, 8.3 e 5.1 antes de assinar. Após a negociação, o contrato pode ser considerado seguro.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SETTINGS ===== -->
+      <div class="app__page" id="page-settings">
+        <div class="app__page-head">
+          <h2 class="app__page-title">Configuracoes</h2>
+        </div>
+        <div class="app__empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <p class="app__empty-state-title">Configuracoes em breve</p>
+          <p class="app__empty-state-text">Estamos trabalhando nas configuracoes de notificacoes, privacidade e integracao. Fique atento!</p>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Mobile bottom nav -->
+    <nav class="app__mobile-nav" aria-label="Navegacao mobile">
+      <a class="app__mobile-nav-item app__mobile-nav-item--active" data-page="overview" href="#overview">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Inicio
+      </a>
+      <a class="app__mobile-nav-item" data-page="risks" href="#risks">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Riscos
+      </a>
+      <a class="app__mobile-nav-item" data-page="analyze" href="#analyze">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Analisar
+        <span class="app__mobile-nav-badge"></span>
+      </a>
+      <a class="app__mobile-nav-item" data-page="guided" href="#guided">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Leitura
+      </a>
+    </nav>
+  </div>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

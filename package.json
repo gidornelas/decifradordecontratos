@@ -1,0 +1,14 @@
+{
+  "name": "decodificador-contratos",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Site e dashboard do Decodificador de Contratos com backend em Vercel + Neon.",
+  "scripts": {
+    "dev": "node -e \"console.log('Local dev script is not used in this project.')\"",
+    "start": "node -e \"console.log('Start script is not used in this project.')\""
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "pg": "^8.13.1"
+  }
+}

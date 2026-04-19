@@ -42,6 +42,7 @@
   var overviewActivityList = document.getElementById("overview-activity-list");
   var overviewTypeInsights = document.getElementById("overview-type-insights");
   var overviewScoreBands = document.getElementById("overview-score-bands");
+  var overviewTrendInsights = document.getElementById("overview-trend-insights");
   var documentsTable = document.getElementById("documents-table");
   var uploadZone = document.getElementById("upload-zone");
   var fileInput = document.getElementById("file-input");
@@ -1286,6 +1287,7 @@
       low: 0,
       pending: 0
     };
+    var timeline = [];
 
     if (!sourceDocuments.length) {
       return {
@@ -1320,11 +1322,55 @@
         if (numericScore !== null) {
           typeMap[typeLabel].scoreTotal += numericScore;
           typeMap[typeLabel].scoredCount += 1;
+          timeline.push({
+            documentName: documentItem.original_name || "documento",
+            score: numericScore,
+            updatedAt: analysis && analysis.updated_at ? analysis.updated_at : (documentItem.updated_at || documentItem.created_at)
+          });
         }
 
         scoreBands[band.key] += 1;
       })
     );
+
+    timeline.sort(function (left, right) {
+      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+    });
+
+    var recentTimeline = timeline.slice(0, 6);
+    var newerSlice = recentTimeline.slice(0, Math.max(1, Math.ceil(recentTimeline.length / 2)));
+    var olderSlice = recentTimeline.slice(Math.max(1, Math.ceil(recentTimeline.length / 2)));
+    var newerAverage = newerSlice.length
+      ? Math.round(newerSlice.reduce(function (total, item) { return total + item.score; }, 0) / newerSlice.length)
+      : null;
+    var olderAverage = olderSlice.length
+      ? Math.round(olderSlice.reduce(function (total, item) { return total + item.score; }, 0) / olderSlice.length)
+      : null;
+    var delta = newerAverage !== null && olderAverage !== null ? newerAverage - olderAverage : null;
+    var latestItem = recentTimeline[0] || null;
+    var latestBand = latestItem ? getScoreBand(latestItem.score) : null;
+    var trendSummary = "Sem base suficiente para comparar a tendencia recente.";
+    var trendPillLabel = "Coletando";
+    var trendPillClass = "comparison-pill--neutral";
+
+    if (delta !== null) {
+      if (delta >= 8) {
+        trendSummary = "Os scores recentes subiram cerca de " + delta + " pontos frente ao bloco anterior.";
+        trendPillLabel = "Risco subindo";
+        trendPillClass = "comparison-pill--critical";
+      } else if (delta <= -8) {
+        trendSummary = "Os scores recentes cairam cerca de " + Math.abs(delta) + " pontos frente ao bloco anterior.";
+        trendPillLabel = "Risco melhorando";
+        trendPillClass = "comparison-pill--safe";
+      } else {
+        trendSummary = "Os scores recentes seguem estaveis em relacao ao bloco anterior.";
+        trendPillLabel = "Estavel";
+        trendPillClass = "comparison-pill--attention";
+      }
+    } else if (latestItem) {
+      trendSummary = "Ainda ha poucas analises historicas, mas ja da para acompanhar a ultima entrega.";
+      trendPillLabel = "Historico curto";
+    }
 
     return {
       types: Object.keys(typeMap)
@@ -1351,12 +1397,29 @@
           return (right.averageScore || -1) - (left.averageScore || -1);
         })
         .slice(0, 4),
-      scoreBands: scoreBands
+      scoreBands: scoreBands,
+      trend: {
+        items: recentTimeline,
+        summary: trendSummary,
+        pillLabel: trendPillLabel,
+        pillClass: trendPillClass,
+        latestLabel: latestItem
+          ? latestItem.documentName + " · " + latestItem.score + "/100"
+          : "Sem analise recente",
+        latestMeta: latestItem
+          ? "Atualizado em " + formatDate(latestItem.updatedAt)
+          : "Conclua uma analise para liberar a linha do tempo.",
+        latestClass: latestBand ? latestBand.pillClass : "comparison-pill--neutral",
+        velocityLabel: recentTimeline.length + " analise" + (recentTimeline.length !== 1 ? "s" : "") + " nas ultimas leituras",
+        velocityMeta: recentTimeline.length > 1
+          ? "As " + recentTimeline.length + " entregas mais recentes ja entram no comparativo do painel."
+          : "Assim que houver mais resultados, vamos comparar a evolucao entre blocos."
+      }
     };
   }
 
   function renderOverviewComparisons(comparisons) {
-    if (!overviewTypeInsights || !overviewScoreBands) {
+    if (!overviewTypeInsights || !overviewScoreBands || !overviewTrendInsights) {
       return;
     }
 
@@ -1385,6 +1448,19 @@
       createComparisonItemMarkup("Score moderado", bands.medium + " contrato" + (bands.medium !== 1 ? "s" : "") + " entre 40 e 69", "Acompanhar", "comparison-pill--attention"),
       createComparisonItemMarkup("Score baixo", bands.low + " contrato" + (bands.low !== 1 ? "s" : "") + " abaixo de 40", "Mais estaveis", "comparison-pill--safe"),
       createComparisonItemMarkup("Sem score", bands.pending + " documento" + (bands.pending !== 1 ? "s" : "") + " aguardando analise", "Em preparo", "comparison-pill--neutral")
+    ].join("");
+
+    var trend = comparisons && comparisons.trend ? comparisons.trend : null;
+
+    if (!trend || !trend.items || !trend.items.length) {
+      overviewTrendInsights.innerHTML = '<div class="table-empty">Conclua mais analises para enxergar a tendencia de risco.</div>';
+      return;
+    }
+
+    overviewTrendInsights.innerHTML = [
+      createComparisonItemMarkup("Tendencia do score", trend.summary, trend.pillLabel, trend.pillClass),
+      createComparisonItemMarkup("Ultima analise", trend.latestLabel, trend.latestMeta, trend.latestClass),
+      createComparisonItemMarkup("Ritmo recente", trend.velocityLabel, trend.velocityMeta, "comparison-pill--neutral")
     ].join("");
   }
 

@@ -193,6 +193,7 @@ Status:
 - [x] protecao de sessao expirada no frontend e onboarding inicial com CTAs
 - [x] onboarding contextual apos upload inicial e atividade recente mais acionavel
 - [x] comparativo no overview por tipo de contrato e faixas de score
+- [x] tendencia recente de score no overview com leitura temporal das analises
 
 ## Fase 7 - Producao
 

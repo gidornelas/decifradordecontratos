@@ -4,6 +4,9 @@ var db = require("../../lib/db");
 var rateLimit = require("../../lib/rate-limit");
 var observability = require("../../lib/observability");
 
+var MAX_EMAIL_LENGTH = 320;
+var MAX_PASSWORD_LENGTH = 256;
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return http.methodNotAllowed(res, ["POST"]);
@@ -46,6 +49,22 @@ module.exports = async function handler(req, res) {
         statusCode: 400
       });
       return http.badRequest(res, "Email and password are required.");
+    }
+
+    if (!isValidEmail(email) || email.length > MAX_EMAIL_LENGTH) {
+      observability.logRequestComplete(req, res, {
+        route: "auth.login",
+        statusCode: 400
+      });
+      return http.badRequest(res, "Enter a valid email address.");
+    }
+
+    if (password.length > MAX_PASSWORD_LENGTH) {
+      observability.logRequestComplete(req, res, {
+        route: "auth.login",
+        statusCode: 400
+      });
+      return http.badRequest(res, "Password is too long.");
     }
 
     var userResult = await db.query(
@@ -120,4 +139,8 @@ module.exports = async function handler(req, res) {
 
 function normalizeEmail(value) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }

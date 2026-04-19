@@ -4,6 +4,11 @@ var db = require("../../lib/db");
 var rateLimit = require("../../lib/rate-limit");
 var observability = require("../../lib/observability");
 
+var MAX_EMAIL_LENGTH = 320;
+var MIN_PASSWORD_LENGTH = 8;
+var MAX_PASSWORD_LENGTH = 256;
+var MAX_FULL_NAME_LENGTH = 120;
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return http.methodNotAllowed(res, ["POST"]);
@@ -49,12 +54,36 @@ module.exports = async function handler(req, res) {
       return http.badRequest(res, "Email and password are required.");
     }
 
-    if (password.length < 8) {
+    if (!isValidEmail(email) || email.length > MAX_EMAIL_LENGTH) {
+      observability.logRequestComplete(req, res, {
+        route: "auth.register",
+        statusCode: 400
+      });
+      return http.badRequest(res, "Enter a valid email address.");
+    }
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
       observability.logRequestComplete(req, res, {
         route: "auth.register",
         statusCode: 400
       });
       return http.badRequest(res, "Password must have at least 8 characters.");
+    }
+
+    if (password.length > MAX_PASSWORD_LENGTH) {
+      observability.logRequestComplete(req, res, {
+        route: "auth.register",
+        statusCode: 400
+      });
+      return http.badRequest(res, "Password is too long.");
+    }
+
+    if (fullName.length > MAX_FULL_NAME_LENGTH) {
+      observability.logRequestComplete(req, res, {
+        route: "auth.register",
+        statusCode: 400
+      });
+      return http.badRequest(res, "Full name must have at most 120 characters.");
     }
 
     var existing = await db.query("select id from users where email = $1 limit 1", [email]);
@@ -117,4 +146,8 @@ module.exports = async function handler(req, res) {
 
 function normalizeEmail(value) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }

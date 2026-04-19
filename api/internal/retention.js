@@ -1,4 +1,5 @@
 var env = require("../../lib/env");
+var auth = require("../../lib/auth");
 var http = require("../../lib/http");
 var observability = require("../../lib/observability");
 var retention = require("../../lib/retention");
@@ -26,7 +27,10 @@ module.exports = async function handler(req, res) {
 
     var providedSecret = getProvidedSecret(req);
 
-    if (!providedSecret || providedSecret !== serverEnv.cronSecret) {
+    if (
+      !providedSecret ||
+      !auth.secretsEqual(providedSecret, serverEnv.cronSecret)
+    ) {
       observability.logSecurityEvent(req, res, "invalid_cron_secret", {
         route: "internal.retention"
       });

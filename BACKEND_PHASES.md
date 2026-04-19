@@ -209,3 +209,4 @@ Status:
 - [x] limpeza automatica de documentos, sessoes e rate limits implementada
 - [ ] `CRON_SECRET` e janelas de retencao configurados na Vercel
 - [x] `api/health` com checks operacionais de storage, cron e rate limiting
+- [x] primeiro pacote de endurecimento de seguranca em auth e rota interna

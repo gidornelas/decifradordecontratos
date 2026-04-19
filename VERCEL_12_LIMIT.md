@@ -1,12 +1,18 @@
-# Problema com部署 na Vercel - Limite de 12 Serverless Functions
+# Problema de limite de Functions na Vercel
 
-## Resumo
+## Situação
 
-O projeto tem **19 endpoints de API**, mas o **plano Hobby da Vercel permite apenas 12 Serverless Functions** por deployment. Isso impede o deploy automático.
+O projeto tinha `19` arquivos `.js` dentro de `api/`.
 
-## Estrutura Original (19 arquivos)
+Na prática, isso fazia o deploy estourar o limite do plano free/Hobby da Vercel para este projeto. O aplicativo funcionava localmente, mas falhava no deploy por excesso de Functions criadas.
 
-```
+## Causa
+
+Este backend não é Next.js. Ele usa funções Node diretas em `api/`, então cada arquivo de rota acaba virando uma Function separada no deploy.
+
+Estrutura antiga:
+
+```text
 api/
 ├── auth/
 │   ├── login.js
@@ -36,58 +42,49 @@ api/
     └── retention.js
 ```
 
-## Tentativas de Solução
+Total: `19` endpoints implementados como arquivos físicos em `api/`.
 
-### 1. Agrupar rotas em 1 arquivo (catch-all route)
+## Solução aplicada
 
-Criamos um arquivo `[...slug].js` que agrupava todas as rotas em um único endpoint.
+Mantivemos as mesmas URLs públicas, mas reduzimos o número de Functions reais.
 
-**Problema:** O Vercel não suporta catch-all routes da mesma forma que Next.js. O roteamento `api/auth/login` não era capturado pelo `[...slug].js`.
+Nova estrutura em `api/`:
 
-**Erro:** `NOT_FOUND` ao tentar acessar qualquer rota.
+```text
+api/
+├── auth.js
+├── analyses.js
+├── documents.js
+├── dashboard.js
+├── health.js
+└── internal/
+    └── retention.js
+```
 
-### 2. Reduzir para 12 endpoints
+Total atual: `6` Functions.
 
-Removemos 7 arquivos para ficar dentro do limite.
+Os handlers antigos foram movidos para `routes-src/` e o `vercel.json` agora usa `rewrites` para mapear URLs como:
 
-**Problema:** Perdemo várias funcionalidades essenciais (documents/[id]/file, analyses/[id]/risks, etc.)
+- `/api/auth/login` -> `/api/auth?action=login`
+- `/api/documents/:id/file` -> `/api/documents?action=file&id=:id`
+- `/api/analyses/:id/risks` -> `/api/analyses?action=risks&id=:id`
 
-**Resultado:** Funciona, mas perde features.
+Assim, o frontend continua chamando as mesmas rotas, mas a Vercel cria menos Functions no deploy.
 
-## Solução Necessária
+## Resultado esperado
 
-Para manter todos os 19 endpoints funcionando, é necessário:
+- Mantém todas as funcionalidades
+- Mantém as URLs existentes
+- Fica dentro do plano free/Hobby
+- Evita upgrade imediato para o plano Pro
 
-1. **Upgrade para plano Pro** (~$20/mês)
-   - Remove limite de Serverless Functions
-   - Suporta ilimitadas funções
+## Observações
 
-2. **Alternativa:** Manter apenas 12 endpoints (funcionalidades reduzidas)
+- `api/health.js` continua separado
+- `api/internal/retention.js` continua separado por causa do cron
+- Os `rewrites` contam como rotas de deploy, mas isso não é problema neste projeto
 
-## Diferenças entre planos
+## Referências
 
-| Recurso | Hobby (Free) | Pro |
-|--------|-------------|-----|
-| Serverless Functions | 12 | Ilimitado |
-| Bandwidth | 100GB/mês | 1TB/mês |
-| Tempo de execução | 10s | 60s |
-| Preço | Grátis | ~$20/mês |
-
-## Como fazer upgrade
-
-1. Acesse https://vercel.com/gidornelas/decifradordecontratos/settings
-2. Clique em "Change Plan" ou "Upgrade"
-3. Escolha o plano Pro
-4. Adicione método de pagamento
-
-Após o upgrade, o próximo deploy funcionará automaticamente.
-
-## Histórico de Commits
-
-- `deee628` - Estado original (19 endpoints) - **funciona localmente**
-- `b54a611` - Tentativa 1: agrupar em 1 arquivo (falhou)
-- Tentativas de router com `[...slug].js` (não funcionou no Vercel)
-
-## Recomendação
-
-Fazer **upgrade para Pro** para manter todas as funcionalidades.
+- Vercel Limits: https://vercel.com/docs/limits
+- Vercel Rewrites: https://vercel.com/docs/routing/rewrites

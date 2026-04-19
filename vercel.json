@@ -1,9 +1,80 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/**/*.js": {
       "runtime": "@vercel/node@5.3.24"
     }
   },
+  "rewrites": [
+    {
+      "source": "/api/auth/login",
+      "destination": "/api/auth?action=login"
+    },
+    {
+      "source": "/api/auth/register",
+      "destination": "/api/auth?action=register"
+    },
+    {
+      "source": "/api/auth/me",
+      "destination": "/api/auth?action=me"
+    },
+    {
+      "source": "/api/auth/logout",
+      "destination": "/api/auth?action=logout"
+    },
+    {
+      "source": "/api/documents/:id/file",
+      "destination": "/api/documents?action=file&id=:id"
+    },
+    {
+      "source": "/api/documents/:id/analysis",
+      "destination": "/api/documents?action=analysis&id=:id"
+    },
+    {
+      "source": "/api/documents/:id/status",
+      "destination": "/api/documents?action=status&id=:id"
+    },
+    {
+      "source": "/api/documents/:id",
+      "destination": "/api/documents?action=detail&id=:id"
+    },
+    {
+      "source": "/api/documents",
+      "destination": "/api/documents?action=index"
+    },
+    {
+      "source": "/api/analyses/:id/reprocess",
+      "destination": "/api/analyses?action=reprocess&id=:id"
+    },
+    {
+      "source": "/api/analyses/:id/risks",
+      "destination": "/api/analyses?action=risks&id=:id"
+    },
+    {
+      "source": "/api/analyses/:id/guided-review",
+      "destination": "/api/analyses?action=guidedReview&id=:id"
+    },
+    {
+      "source": "/api/analyses/:id",
+      "destination": "/api/analyses?action=detail&id=:id"
+    },
+    {
+      "source": "/api/analyses",
+      "destination": "/api/analyses?action=index"
+    },
+    {
+      "source": "/api/dashboard/overview",
+      "destination": "/api/dashboard?action=overview"
+    },
+    {
+      "source": "/api/dashboard/recent-documents",
+      "destination": "/api/dashboard?action=recentDocuments"
+    },
+    {
+      "source": "/api/dashboard/risk-distribution",
+      "destination": "/api/dashboard?action=riskDistribution"
+    }
+  ],
   "crons": [
     {
       "path": "/api/internal/retention",

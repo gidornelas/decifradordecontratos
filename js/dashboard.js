@@ -20,6 +20,19 @@
   var userEmailEl = document.querySelector(".user-email");
   var userAvatarEl = document.querySelector(".user-avatar");
   var overviewDocumentsTable = document.getElementById("overview-documents-table");
+  var overviewRiskRing = document.getElementById("overview-risk-ring");
+  var overviewRiskScore = document.getElementById("overview-risk-score");
+  var overviewRiskLabel = document.getElementById("overview-risk-label");
+  var overviewRiskDesc = document.getElementById("overview-risk-desc");
+  var overviewAnalysesCount = document.getElementById("overview-analyses-count");
+  var overviewDocumentsCount = document.getElementById("overview-documents-count");
+  var overviewCriticalFill = document.getElementById("overview-critical-fill");
+  var overviewAttentionFill = document.getElementById("overview-attention-fill");
+  var overviewSafeFill = document.getElementById("overview-safe-fill");
+  var overviewCriticalCount = document.getElementById("overview-critical-count");
+  var overviewAttentionCount = document.getElementById("overview-attention-count");
+  var overviewSafeCount = document.getElementById("overview-safe-count");
+  var overviewActivityList = document.getElementById("overview-activity-list");
   var documentsTable = document.getElementById("documents-table");
   var uploadZone = document.getElementById("upload-zone");
   var fileInput = document.getElementById("file-input");
@@ -50,6 +63,7 @@
   var authMode = "login";
   var currentDocuments = [];
   var analysisCache = {};
+  var overviewActivityCache = {};
   var currentDocumentId = "";
   var currentUser = null;
   var currentRiskFilter = "all";
@@ -424,6 +438,37 @@
     ].join(" ");
   }
 
+  function formatRelativeDate(value) {
+    var date = value ? new Date(value) : null;
+    var diffMs;
+    var diffMinutes;
+    var diffHours;
+    var diffDays;
+
+    if (!date || Number.isNaN(date.getTime())) {
+      return "--";
+    }
+
+    diffMs = Date.now() - date.getTime();
+    diffMinutes = Math.max(1, Math.round(diffMs / 60000));
+
+    if (diffMinutes < 60) {
+      return diffMinutes === 1 ? "agora mesmo" : "há " + diffMinutes + " min";
+    }
+
+    diffHours = Math.round(diffMinutes / 60);
+    if (diffHours < 24) {
+      return diffHours === 1 ? "há 1 hora" : "há " + diffHours + " horas";
+    }
+
+    diffDays = Math.round(diffHours / 24);
+    if (diffDays < 30) {
+      return diffDays === 1 ? "há 1 dia" : "há " + diffDays + " dias";
+    }
+
+    return formatDate(value);
+  }
+
   function getFileExtension(value) {
     var normalized = String(value || "").trim().toLowerCase();
     if (!normalized) return "";
@@ -708,6 +753,255 @@
       option.textContent = documentItem.original_name || "documento";
       selectElement.appendChild(option);
     });
+  }
+
+  function getOverviewDocumentCountLabel(totalDocuments) {
+    if (!Number.isFinite(totalDocuments) || totalDocuments <= 0) {
+      return "Nenhum documento enviado";
+    }
+
+    if (totalDocuments === 1) {
+      return "1 documento no painel";
+    }
+
+    return String(totalDocuments) + " documentos no painel";
+  }
+
+  function setOverviewDistributionFill(element, count, total) {
+    if (!element) return;
+    element.style.width = total > 0 ? String(Math.max(8, Math.round((count / total) * 100))) + "%" : "0%";
+  }
+
+  function createOverviewActivityItem(item) {
+    return [
+      '<div class="activity-item">',
+      '<span class="activity-dot ' + escapeHtml(item.dotClass) + '"></span>',
+      "<div>",
+      '<div class="activity-text">' + item.html + "</div>",
+      '<div class="activity-time">' + escapeHtml(item.timeLabel) + "</div>",
+      "</div>",
+      "</div>"
+    ].join("");
+  }
+
+  function buildOverviewActivityFallback(documents) {
+    if (!Array.isArray(documents) || !documents.length) {
+      return [
+        {
+          dotClass: "activity-dot--default",
+          html: "Envie seu primeiro contrato para começar a montar o painel.",
+          timeLabel: "Sem atividade ainda"
+        }
+      ];
+    }
+
+    return documents.slice(0, 4).map(function (documentItem) {
+      var status = getStatusMeta(documentItem.processing_status);
+      return {
+        dotClass:
+          status.className === "badge--critical"
+            ? "activity-dot--danger"
+            : status.className === "badge--safe"
+              ? "activity-dot--safe"
+              : status.className === "badge--attention"
+                ? "activity-dot--warn"
+                : "activity-dot--default",
+        html:
+          "<strong>" +
+          escapeHtml(documentItem.original_name || "documento") +
+          "</strong> " +
+          escapeHtml(status.label.toLowerCase()),
+        timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at)
+      };
+    });
+  }
+
+  async function getAnalysisForOverview(documentId) {
+    if (!documentId) {
+      return null;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(overviewActivityCache, documentId)) {
+      return overviewActivityCache[documentId];
+    }
+
+    var existing = await requestJsonDetailed(
+      "/api/documents/" + encodeURIComponent(documentId) + "/analysis",
+      { method: "GET" }
+    );
+    var message = existing.payload && existing.payload.message ? existing.payload.message : "";
+
+    if (existing.ok) {
+      overviewActivityCache[documentId] = existing.payload;
+      return existing.payload;
+    }
+
+    if (existing.status === 400 && message === "No analysis found for this document.") {
+      overviewActivityCache[documentId] = null;
+      return null;
+    }
+
+    overviewActivityCache[documentId] = null;
+    return null;
+  }
+
+  async function buildOverviewActivity(documents) {
+    var sourceDocuments = Array.isArray(documents) ? documents.slice(0, 4) : [];
+    var analyses = await Promise.all(
+      sourceDocuments.map(function (documentItem) {
+        return getAnalysisForOverview(documentItem.id);
+      })
+    );
+
+    return sourceDocuments.map(function (documentItem, index) {
+      var analysisPayload = analyses[index];
+      var analysisItem = analysisPayload && analysisPayload.analysis ? analysisPayload.analysis : null;
+      var risks = analysisPayload && Array.isArray(analysisPayload.risks) ? analysisPayload.risks : [];
+      var criticalCount = risks.filter(function (risk) {
+        return normalizeSeverity(risk && risk.severity) === "critical";
+      }).length;
+      var status = String(documentItem.processing_status || "").toLowerCase();
+
+      if (analysisItem && analysisItem.status === "completed") {
+        if (criticalCount > 0) {
+          return {
+            dotClass: "activity-dot--danger",
+            html:
+              "<strong>" +
+              escapeHtml(documentItem.original_name || "documento") +
+              "</strong> com " +
+              escapeHtml(String(criticalCount)) +
+              " risco" +
+              (criticalCount > 1 ? "s críticos" : " crítico"),
+            timeLabel: formatRelativeDate(analysisItem.updated_at || documentItem.updated_at || documentItem.created_at)
+          };
+        }
+
+        return {
+          dotClass: "activity-dot--safe",
+          html:
+            "<strong>" +
+            escapeHtml(documentItem.original_name || "documento") +
+            "</strong> analisado sem riscos críticos",
+          timeLabel: formatRelativeDate(analysisItem.updated_at || documentItem.updated_at || documentItem.created_at)
+        };
+      }
+
+      if (status === "analyzing" || status === "uploaded") {
+        return {
+          dotClass: "activity-dot--default",
+          html:
+            "<strong>" +
+            escapeHtml(documentItem.original_name || "documento") +
+            "</strong> enviado para análise",
+          timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at)
+        };
+      }
+
+      if (status === "failed") {
+        return {
+          dotClass: "activity-dot--warn",
+          html:
+            "<strong>" +
+            escapeHtml(documentItem.original_name || "documento") +
+            "</strong> precisa de revisão antes de nova análise",
+          timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at)
+        };
+      }
+
+      return {
+        dotClass: "activity-dot--default",
+        html:
+          "<strong>" +
+          escapeHtml(documentItem.original_name || "documento") +
+          "</strong> disponível no painel",
+        timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at)
+      };
+    });
+  }
+
+  function renderOverviewKpis(kpis, distribution) {
+    var totalDocuments = Number(kpis && kpis.total_documents) || 0;
+    var completedAnalyses = Number(kpis && kpis.completed_analyses) || 0;
+    var criticalRisks = Number(kpis && kpis.critical_risks) || 0;
+    var critical = Number(distribution && distribution.critical) || 0;
+    var attention = Number(distribution && distribution.attention) || 0;
+    var safe = Number(distribution && distribution.safe) || 0;
+    var totalRiskItems = critical + attention + safe;
+    var computedScore =
+      totalRiskItems > 0
+        ? Math.max(
+            0,
+            Math.min(100, Math.round(((critical * 100) + (attention * 55) + (safe * 15)) / totalRiskItems))
+          )
+        : 0;
+    var scoreMeta = getRiskScoreMeta(computedScore);
+
+    if (overviewRiskScore) {
+      overviewRiskScore.textContent = String(computedScore);
+    }
+    if (overviewRiskLabel) {
+      overviewRiskLabel.textContent = scoreMeta.label;
+    }
+    if (overviewRiskDesc) {
+      overviewRiskDesc.textContent = criticalRisks > 0
+        ? String(criticalRisks) + " risco" + (criticalRisks > 1 ? "s críticos encontrados" : " crítico encontrado")
+        : completedAnalyses > 0
+          ? "Análises concluídas sem riscos críticos"
+          : "Envie um documento para começar";
+    }
+    setRingTone(overviewRiskRing, scoreMeta.ringClass);
+
+    if (overviewAnalysesCount) {
+      overviewAnalysesCount.textContent = String(completedAnalyses);
+    }
+    if (overviewDocumentsCount) {
+      overviewDocumentsCount.textContent = getOverviewDocumentCountLabel(totalDocuments);
+    }
+
+    if (overviewCriticalCount) overviewCriticalCount.textContent = String(critical);
+    if (overviewAttentionCount) overviewAttentionCount.textContent = String(attention);
+    if (overviewSafeCount) overviewSafeCount.textContent = String(safe);
+
+    setOverviewDistributionFill(overviewCriticalFill, critical, totalRiskItems);
+    setOverviewDistributionFill(overviewAttentionFill, attention, totalRiskItems);
+    setOverviewDistributionFill(overviewSafeFill, safe, totalRiskItems);
+  }
+
+  function renderOverviewActivity(items) {
+    if (!overviewActivityList) return;
+
+    overviewActivityList.innerHTML = (Array.isArray(items) && items.length ? items : [
+      {
+        dotClass: "activity-dot--default",
+        html: "Sem atividade recente para mostrar.",
+        timeLabel: "Agora"
+      }
+    ])
+      .map(createOverviewActivityItem)
+      .join("");
+  }
+
+  async function loadOverviewData() {
+    try {
+      var responses = await Promise.all([
+        requestJson("/api/dashboard/overview", { method: "GET" }),
+        requestJson("/api/dashboard/risk-distribution", { method: "GET" })
+      ]);
+      var overviewData = responses[0] || {};
+      var riskData = responses[1] || {};
+      var recentDocuments = Array.isArray(overviewData.recentDocuments)
+        ? overviewData.recentDocuments
+        : currentDocuments.slice(0, 5);
+      var activityItems;
+
+      renderOverviewKpis(overviewData.kpis || {}, riskData.distribution || {});
+      activityItems = await buildOverviewActivity(recentDocuments);
+      renderOverviewActivity(activityItems);
+    } catch (error) {
+      renderOverviewKpis({}, { critical: 0, attention: 0, safe: 0 });
+      renderOverviewActivity(buildOverviewActivityFallback(currentDocuments));
+    }
   }
 
   function syncDocumentViews(documents) {
@@ -1371,6 +1665,7 @@
     try {
       var data = await requestJson("/api/documents", { method: "GET" });
       syncDocumentViews(data.documents || []);
+      await loadOverviewData();
 
       if (!currentDocuments.length) {
         renderAnalysisEmptyState(
@@ -1382,6 +1677,7 @@
       }
     } catch (error) {
       syncDocumentViews([]);
+      await loadOverviewData();
       renderAnalysisEmptyState(
         "Falha ao carregar documentos",
         error.message || "Não foi possível carregar seus documentos agora."
@@ -1655,6 +1951,7 @@ function readFilePayload(file) {
       });
 
       settingsLoaded = false;
+      overviewActivityCache = {};
       setCurrentUser(data.user || null);
       showApp();
       switchPage("overview");
@@ -1674,12 +1971,15 @@ function readFilePayload(file) {
     }
 
     analysisCache = {};
+    overviewActivityCache = {};
     currentDocuments = [];
     currentDocumentId = "";
     settingsLoaded = false;
     setSettingsFeedback("", "");
     setCurrentUser(null);
     syncDocumentViews([]);
+    renderOverviewKpis({}, { critical: 0, attention: 0, safe: 0 });
+    renderOverviewActivity(buildOverviewActivityFallback([]));
     resetUploadUi();
     showLogin();
   }
@@ -1688,6 +1988,7 @@ function readFilePayload(file) {
     try {
       var data = await requestJson("/api/auth/me", { method: "GET" });
       settingsLoaded = false;
+      overviewActivityCache = {};
       setCurrentUser(data.user || null);
       showApp();
       switchPage("overview");

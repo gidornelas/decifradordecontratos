@@ -162,26 +162,26 @@
       <div class="widgets">
         <div class="card" style="text-align:center">
           <div class="widget-title">Risco Geral</div>
-          <div class="ring ring--warn" style="width:80px;height:80px">
+          <div class="ring ring--warn" id="overview-risk-ring" style="width:80px;height:80px">
             <div style="text-align:center">
-              <div class="ring-val">72</div>
+              <div class="ring-val" id="overview-risk-score">72</div>
               <div class="ring-max">/100</div>
             </div>
           </div>
-          <div class="ring-label">Risco Moderado</div>
-          <div class="ring-desc">3 riscos críticos encontrados</div>
+          <div class="ring-label" id="overview-risk-label">Risco Moderado</div>
+          <div class="ring-desc" id="overview-risk-desc">3 riscos críticos encontrados</div>
         </div>
         <div class="card">
           <div class="widget-title">Contratos Analisados</div>
-          <div class="widget-val">14</div>
-          <div class="widget-sub">3 este mês</div>
+          <div class="widget-val" id="overview-analyses-count">14</div>
+          <div class="widget-sub" id="overview-documents-count">3 este mês</div>
         </div>
         <div class="card">
           <div class="widget-title">Distribuição de Riscos</div>
-          <div style="margin-top:16px">
-            <div class="bar-row"><span class="bar-label">Críticos</span><div class="bar-track"><div class="bar-fill bar-fill--danger" style="width:21%"></div></div><span class="bar-count">3</span></div>
-            <div class="bar-row"><span class="bar-label">Atenção</span><div class="bar-track"><div class="bar-fill bar-fill--warn" style="width:29%"></div></div><span class="bar-count">4</span></div>
-            <div class="bar-row"><span class="bar-label">Seguros</span><div class="bar-track"><div class="bar-fill bar-fill--safe" style="width:50%"></div></div><span class="bar-count">7</span></div>
+          <div style="margin-top:16px" id="overview-distribution">
+            <div class="bar-row"><span class="bar-label">Críticos</span><div class="bar-track"><div class="bar-fill bar-fill--danger" id="overview-critical-fill" style="width:21%"></div></div><span class="bar-count" id="overview-critical-count">3</span></div>
+            <div class="bar-row"><span class="bar-label">Atenção</span><div class="bar-track"><div class="bar-fill bar-fill--warn" id="overview-attention-fill" style="width:29%"></div></div><span class="bar-count" id="overview-attention-count">4</span></div>
+            <div class="bar-row"><span class="bar-label">Seguros</span><div class="bar-track"><div class="bar-fill bar-fill--safe" id="overview-safe-fill" style="width:50%"></div></div><span class="bar-count" id="overview-safe-count">7</span></div>
           </div>
         </div>
       </div>
@@ -226,10 +226,12 @@
         </div>
         <div class="card">
           <div class="section-subtitle">Atividade recente</div>
-          <div class="activity-item"><span class="activity-dot activity-dot--danger"></span><div><div class="activity-text"><strong>3 riscos críticos</strong> em contrato_aluguel.pdf</div><div class="activity-time">2 horas atrás</div></div></div>
-          <div class="activity-item"><span class="activity-dot activity-dot--safe"></span><div><div class="activity-text"><strong>politica_privacidade.pdf</strong> aprovado — sem riscos</div><div class="activity-time">5 horas atrás</div></div></div>
-          <div class="activity-item"><span class="activity-dot activity-dot--warn"></span><div><div class="activity-text"><strong>contrato_servico.docx</strong> requer atenção em 2 cláusulas</div><div class="activity-time">1 dia atrás</div></div></div>
-          <div class="activity-item"><span class="activity-dot activity-dot--default"></span><div><div class="activity-text"><strong>termos_plataforma.pdf</strong> enviado para análise</div><div class="activity-time">2 dias atrás</div></div></div>
+          <div id="overview-activity-list">
+            <div class="activity-item"><span class="activity-dot activity-dot--danger"></span><div><div class="activity-text"><strong>3 riscos críticos</strong> em contrato_aluguel.pdf</div><div class="activity-time">2 horas atrás</div></div></div>
+            <div class="activity-item"><span class="activity-dot activity-dot--safe"></span><div><div class="activity-text"><strong>politica_privacidade.pdf</strong> aprovado — sem riscos</div><div class="activity-time">5 horas atrás</div></div></div>
+            <div class="activity-item"><span class="activity-dot activity-dot--warn"></span><div><div class="activity-text"><strong>contrato_servico.docx</strong> requer atenção em 2 cláusulas</div><div class="activity-time">1 dia atrás</div></div></div>
+            <div class="activity-item"><span class="activity-dot activity-dot--default"></span><div><div class="activity-text"><strong>termos_plataforma.pdf</strong> enviado para análise</div><div class="activity-time">2 dias atrás</div></div></div>
+          </div>
         </div>
       </div>
     </div>

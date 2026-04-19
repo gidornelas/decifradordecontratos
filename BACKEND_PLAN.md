@@ -119,14 +119,14 @@ Responsabilidades:
 
 ## Proximos Passos Recomendados
 
-1. Refinar `overview` e atividade recente para refletirem dados reais das análises
-2. Adicionar uma validacao operacional simples para o job de retencao
-3. Consolidar monitoramento de erro e execucao em producao
-4. Revisar UX de exportacao e compartilhamento dos resultados
-5. Fechar protecoes adicionais de rotas no frontend
+1. Adicionar uma validacao operacional simples para o job de retencao
+2. Consolidar monitoramento de erro e execucao em producao
+3. Revisar UX de exportacao e compartilhamento dos resultados
+4. Fechar protecoes adicionais de rotas no frontend
+5. Refinar busca, filtros e estados vazios do dashboard
 
 ## Riscos Abertos
 
 - o job de retencao depende de configuracao correta de `CRON_SECRET`
 - a UX final do dashboard ainda precisa refletir todos os dados reais das APIs
-- overview e atividade recente ainda misturam placeholders com dados reais
+- a busca e os filtros do dashboard ainda nao atuam sobre os dados reais

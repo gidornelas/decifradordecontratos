@@ -184,7 +184,7 @@ Status:
 - [x] endpoints base de dashboard (`overview`, `recent-documents`, `risk-distribution`)
 - [x] documentos reais listados por API
 - [x] results e risks conectados ao payload real de analise
-- [ ] refinamento final de overview e atividade recente no frontend
+- [x] overview e atividade recente conectados aos dados reais do dashboard
 
 ## Fase 7 - Producao
 

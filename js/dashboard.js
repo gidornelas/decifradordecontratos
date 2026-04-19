@@ -32,6 +32,13 @@
   var guidedDocSelect = document.getElementById("guided-doc-select");
   var resultsDocSelect = document.getElementById("results-doc-select");
   var exportPdfBtn = document.getElementById("export-pdf-btn");
+  var settingsFullNameInput = document.getElementById("settings-full-name");
+  var settingsEmailInput = document.getElementById("settings-email");
+  var settingsPlanInput = document.getElementById("settings-plan");
+  var settingsCreatedAtInput = document.getElementById("settings-created-at");
+  var settingsSaveButton = document.getElementById("settings-save-btn");
+  var settingsFeedback = document.getElementById("settings-feedback");
+  var settingsSessionStatus = document.getElementById("settings-session-status");
   var riskFilters = Array.prototype.slice.call(document.querySelectorAll(".risk-filter"));
   var guidedTabs = Array.prototype.slice.call(document.querySelectorAll(".guided-tab"));
   var pages = Array.prototype.slice.call(document.querySelectorAll(".page"));
@@ -44,6 +51,7 @@
   var currentUser = null;
   var currentRiskFilter = "all";
   var currentGuidedTab = "resumo";
+  var settingsLoaded = false;
   var pageTitles = {
     overview: "Visão geral",
     documents: "Documentos",
@@ -218,6 +226,8 @@
         ? getInitials(user.fullName || user.full_name, user.email)
         : "MS";
     }
+
+    populateSettingsFields(currentUser);
   }
 
   function switchPage(pageName) {
@@ -241,6 +251,125 @@
 
     if (topbarTitle) {
       topbarTitle.textContent = pageTitles[pageName] || "Decodificador";
+    }
+
+    if (pageName === "settings") {
+      loadSettingsProfile(false);
+    }
+  }
+
+  function populateSettingsFields(user) {
+    if (settingsFullNameInput) {
+      settingsFullNameInput.value = user ? user.fullName || user.full_name || "" : "";
+    }
+
+    if (settingsEmailInput) {
+      settingsEmailInput.value = user ? user.email || "" : "";
+    }
+
+    if (settingsPlanInput) {
+      settingsPlanInput.value = user ? formatPlanCode(user.planCode || user.plan_code) : "";
+    }
+
+    if (settingsCreatedAtInput) {
+      settingsCreatedAtInput.value = user ? formatDate(user.createdAt || user.created_at) : "";
+    }
+
+    if (settingsSessionStatus) {
+      settingsSessionStatus.textContent = user ? "Conectado" : "Sessão ausente";
+    }
+  }
+
+  function formatPlanCode(value) {
+    var normalized = String(value || "").trim().toLowerCase();
+
+    if (!normalized) {
+      return "--";
+    }
+
+    if (normalized === "free") return "Free";
+    if (normalized === "pro") return "Pro";
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  }
+
+  function setSettingsFeedback(message, tone) {
+    if (!settingsFeedback) return;
+
+    if (!message) {
+      settingsFeedback.hidden = true;
+      settingsFeedback.textContent = "";
+      settingsFeedback.style.color = "";
+      settingsFeedback.style.borderColor = "";
+      return;
+    }
+
+    settingsFeedback.hidden = false;
+    settingsFeedback.textContent = message;
+    settingsFeedback.style.color = tone === "success" ? "var(--safe)" : "var(--danger)";
+    settingsFeedback.style.borderColor = tone === "success"
+      ? "rgba(34,197,94,.28)"
+      : "rgba(239,68,68,.28)";
+  }
+
+  function setSettingsSaving(isSaving) {
+    if (!settingsSaveButton) return;
+    settingsSaveButton.disabled = isSaving;
+    settingsSaveButton.lastChild.textContent = isSaving
+      ? " Salvando..."
+      : " Salvar perfil";
+  }
+
+  async function loadSettingsProfile(forceRefresh) {
+    if (!forceRefresh && settingsLoaded && currentUser) {
+      populateSettingsFields(currentUser);
+      return;
+    }
+
+    if (!currentUser && !forceRefresh) {
+      populateSettingsFields(null);
+      return;
+    }
+
+    try {
+      var data = await requestJson("/api/users/me", { method: "GET" });
+      settingsLoaded = true;
+      setCurrentUser(data.user || null);
+      setSettingsFeedback("", "");
+    } catch (error) {
+      setSettingsFeedback(
+        error.message || "Não foi possível carregar seu perfil agora.",
+        "error"
+      );
+    }
+  }
+
+  async function saveSettingsProfile() {
+    if (!settingsFullNameInput) return;
+
+    setSettingsFeedback("", "");
+    setSettingsSaving(true);
+
+    try {
+      var data = await requestJson("/api/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({
+          fullName: settingsFullNameInput.value.trim()
+        })
+      });
+
+      settingsLoaded = true;
+      setCurrentUser(data.user || null);
+      setSettingsFeedback(
+        data.message || "Perfil atualizado com sucesso.",
+        "success"
+      );
+    } catch (error) {
+      setSettingsFeedback(
+        error.message || "Não foi possível atualizar seu perfil.",
+        "error"
+      );
+    } finally {
+      setSettingsSaving(false);
     }
   }
 
@@ -1411,6 +1540,7 @@ function readFilePayload(file) {
         body: JSON.stringify(payload)
       });
 
+      settingsLoaded = false;
       setCurrentUser(data.user || null);
       showApp();
       switchPage("overview");
@@ -1432,6 +1562,8 @@ function readFilePayload(file) {
     analysisCache = {};
     currentDocuments = [];
     currentDocumentId = "";
+    settingsLoaded = false;
+    setSettingsFeedback("", "");
     setCurrentUser(null);
     syncDocumentViews([]);
     resetUploadUi();
@@ -1441,6 +1573,7 @@ function readFilePayload(file) {
   async function restoreSession() {
     try {
       var data = await requestJson("/api/auth/me", { method: "GET" });
+      settingsLoaded = false;
       setCurrentUser(data.user || null);
       showApp();
       switchPage("overview");
@@ -1588,6 +1721,21 @@ function readFilePayload(file) {
     if (exportPdfBtn) {
       exportPdfBtn.addEventListener("click", function () {
         window.print();
+      });
+    }
+
+    if (settingsSaveButton) {
+      settingsSaveButton.addEventListener("click", function () {
+        saveSettingsProfile();
+      });
+    }
+
+    if (settingsFullNameInput) {
+      settingsFullNameInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          saveSettingsProfile();
+        }
       });
     }
   }

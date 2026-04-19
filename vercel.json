@@ -73,6 +73,10 @@
     {
       "source": "/api/dashboard/risk-distribution",
       "destination": "/api/dashboard?action=riskDistribution"
+    },
+    {
+      "source": "/api/users/me",
+      "destination": "/api/users?action=me"
     }
   ],
   "crons": [

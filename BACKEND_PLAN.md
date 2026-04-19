@@ -123,10 +123,10 @@ Responsabilidades:
 2. Consolidar monitoramento de erro e execucao em producao
 3. Revisar UX de exportacao e compartilhamento dos resultados
 4. Fechar protecoes adicionais de rotas no frontend
-5. Refinar busca, filtros e estados vazios do dashboard
+5. Evoluir filtros por status, tipo e severidade no dashboard
 
 ## Riscos Abertos
 
 - o job de retencao depende de configuracao correta de `CRON_SECRET`
 - a UX final do dashboard ainda precisa refletir todos os dados reais das APIs
-- a busca e os filtros do dashboard ainda nao atuam sobre os dados reais
+- os filtros avancados do dashboard ainda nao existem por status, tipo e severidade

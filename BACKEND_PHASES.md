@@ -185,6 +185,7 @@ Status:
 - [x] documentos reais listados por API
 - [x] results e risks conectados ao payload real de analise
 - [x] overview e atividade recente conectados aos dados reais do dashboard
+- [x] busca do dashboard aplicada sobre documentos e estados vazios reais
 
 ## Fase 7 - Producao
 

@@ -181,9 +181,11 @@ input,select,textarea{font-family:inherit}
 .table-doc{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--text);font-weight:500}
 .table-doc svg{width:15px;height:15px;color:var(--neutral-2);flex-shrink:0}
 .table-type,.table-date{font-size:13px;color:var(--neutral)}
+.table-actions{display:inline-flex;align-items:center;gap:6px;justify-self:end}
 .table-action-btn{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--neutral);border:1px solid var(--neutral-4);background:var(--white);transition:all .15s;margin-left:auto}
 .table-action-btn:hover{border-color:var(--blue);color:var(--blue)}
 .table-action-btn svg{width:14px;height:14px}
+.table-action-btn--danger:hover{border-color:var(--danger-bd);color:var(--danger)}
 .table-empty{padding:24px 16px;text-align:center;font-size:14px;color:var(--neutral)}
 
 /* â”€â”€ BADGES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */

@@ -969,7 +969,10 @@
       '<span class="table-type">' + escapeHtml(getDocumentTypeLabel(documentItem)) + "</span>",
       '<span class="table-date">' + escapeHtml(formatDate(documentItem.created_at)) + "</span>",
       '<span class="badge ' + status.className + '"><span class="badge-dot"></span>' + escapeHtml(status.label) + "</span>",
-      '<span><button class="table-action-btn" type="button" aria-label="Abrir documento"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span>',
+      '<span class="table-actions">' +
+        '<button class="table-action-btn" type="button" data-action="open" aria-label="Abrir documento"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>' +
+        '<button class="table-action-btn table-action-btn--danger" type="button" data-action="delete" aria-label="Excluir documento"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>' +
+      "</span>",
       "</div>"
     ].join("");
   }
@@ -2911,6 +2914,35 @@ function readFilePayload(file) {
     loadAndRenderDocumentAnalysis(documentId);
   }
 
+  async function deleteDocument(documentId) {
+    var documentItem = findDocumentById(documentId);
+    var documentName = documentItem && documentItem.original_name
+      ? documentItem.original_name
+      : "este documento";
+
+    if (!documentId) {
+      return;
+    }
+
+    if (!window.confirm('Excluir "' + documentName + '"? Essa ação também remove o documento do banco e não pode ser desfeita.')) {
+      return;
+    }
+
+    await requestJson("/api/documents/" + encodeURIComponent(documentId), {
+      method: "DELETE"
+    });
+
+    delete analysisCache[documentId];
+    delete overviewActivityCache[documentId];
+    delete documentSeverityCache[documentId];
+
+    if (currentDocumentId === documentId) {
+      currentDocumentId = "";
+    }
+
+    await loadDocuments();
+  }
+
   function applyRiskFilter(filter) {
     currentRiskFilter = filter || "all";
     Array.prototype.forEach.call(document.querySelectorAll("#page-risks .risk-card"), function (card) {
@@ -3119,10 +3151,30 @@ function readFilePayload(file) {
     [overviewDocumentsTable, documentsTable].forEach(function (tableElement) {
       if (!tableElement) return;
 
-      tableElement.addEventListener("click", function (event) {
+      tableElement.addEventListener("click", async function (event) {
+        var actionButton = event.target.closest("[data-action]");
         var row = event.target.closest(".table-row");
         if (!row) return;
-        openDocument(row.getAttribute("data-document-id"), "analyze");
+        var documentId = row.getAttribute("data-document-id");
+
+        if (actionButton) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          if (actionButton.getAttribute("data-action") === "delete") {
+            try {
+              await deleteDocument(documentId);
+            } catch (error) {
+              window.alert(error.message || "Nao foi possivel excluir o documento agora.");
+            }
+            return;
+          }
+
+          openDocument(documentId, "analyze");
+          return;
+        }
+
+        openDocument(documentId, "analyze");
       });
     });
   }

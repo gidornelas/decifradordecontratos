@@ -194,6 +194,7 @@ Status:
 - [x] onboarding contextual apos upload inicial e atividade recente mais acionavel
 - [x] comparativo no overview por tipo de contrato e faixas de score
 - [x] tendencia recente de score no overview com leitura temporal das analises
+- [x] exclusao de documentos pelo dashboard ligada ao delete real do backend
 
 ## Fase 7 - Producao
 

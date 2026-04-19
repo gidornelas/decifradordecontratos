@@ -191,6 +191,7 @@ Status:
 - [x] navegacao mobile da sidebar com drawer e atalhos rapidos persistentes
 - [x] exportacao e compartilhamento com feedback no fluxo de resultados
 - [x] protecao de sessao expirada no frontend e onboarding inicial com CTAs
+- [x] onboarding contextual apos upload inicial e atividade recente mais acionavel
 
 ## Fase 7 - Producao
 

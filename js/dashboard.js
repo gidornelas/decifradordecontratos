@@ -971,14 +971,16 @@
   }
 
   function getDocumentOnboardingMarkup() {
+    var state = getOnboardingState();
+
     return [
       '<div class="empty-state">',
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>',
-      '<div class="empty-state-title">Envie seu primeiro contrato</div>',
-      '<div class="empty-state-text">Suba um PDF, DOCX ou TXT para desbloquear riscos, leitura guiada e resultados completos no painel.</div>',
+      '<div class="empty-state-title">' + escapeHtml(state.title) + "</div>",
+      '<div class="empty-state-text">' + escapeHtml(state.text) + "</div>",
       '<div class="empty-state-actions">',
-      '<button class="btn btn-primary" type="button" data-nav="analyze">Analisar contrato</button>',
-      '<button class="btn btn-outline" type="button" data-nav="settings">Ver configuracoes</button>',
+      "<button class=\"btn btn-primary\" type=\"button\" data-nav=\"" + escapeHtml(state.primaryNav) + "\">" + escapeHtml(state.primaryLabel) + "</button>",
+      "<button class=\"btn btn-outline\" type=\"button\" data-nav=\"" + escapeHtml(state.secondaryNav) + "\">" + escapeHtml(state.secondaryLabel) + "</button>",
       "</div>",
       "</div>"
     ].join("");
@@ -1024,8 +1026,22 @@
   }
 
   function getOverviewDocumentCountLabel(totalDocuments) {
+    var summary = countDocumentsByStatus(currentDocuments);
+
     if (!Number.isFinite(totalDocuments) || totalDocuments <= 0) {
       return "Nenhum documento enviado";
+    }
+
+    if (summary.completed > 0) {
+      return String(summary.completed) + " analise" + (summary.completed > 1 ? "s prontas" : " pronta");
+    }
+
+    if (summary.analyzing > 0) {
+      return String(summary.analyzing) + " em analise agora";
+    }
+
+    if (summary.failed > 0 && summary.total === summary.failed) {
+      return "Revisao necessaria nos envios";
     }
 
     if (totalDocuments === 1) {
@@ -1047,6 +1063,7 @@
       "<div>",
       '<div class="activity-text">' + item.html + "</div>",
       '<div class="activity-time">' + escapeHtml(item.timeLabel) + "</div>",
+      item.actionMarkup || "",
       "</div>",
       "</div>"
     ].join("");
@@ -1064,7 +1081,97 @@
     return "Nenhum documento enviado ainda.";
   }
 
+  function countDocumentsByStatus(documents) {
+    var summary = {
+      total: 0,
+      uploaded: 0,
+      analyzing: 0,
+      completed: 0,
+      failed: 0
+    };
+
+    (Array.isArray(documents) ? documents : []).forEach(function (documentItem) {
+      var status = normalizeStatusFilterValue(documentItem && documentItem.processing_status);
+      summary.total += 1;
+
+      if (status === "completed") {
+        summary.completed += 1;
+      } else if (status === "analyzing") {
+        summary.analyzing += 1;
+      } else if (status === "failed") {
+        summary.failed += 1;
+      } else {
+        summary.uploaded += 1;
+      }
+    });
+
+    return summary;
+  }
+
+  function getOnboardingState() {
+    var summary = countDocumentsByStatus(currentDocuments);
+
+    if (!summary.total) {
+      return {
+        title: "Envie seu primeiro contrato",
+        text: "Suba um PDF, DOCX ou TXT para desbloquear riscos, leitura guiada e resultados completos no painel.",
+        primaryLabel: "Analisar contrato",
+        primaryNav: "analyze",
+        secondaryLabel: "Ver configuracoes",
+        secondaryNav: "settings"
+      };
+    }
+
+    if (!summary.completed && (summary.uploaded || summary.analyzing)) {
+      return {
+        title: "Seu primeiro painel esta em andamento",
+        text: "Voce ja enviou " + summary.total + " documento" + (summary.total > 1 ? "s" : "") + ". Assim que a analise terminar, vamos liberar riscos, leitura guiada e resultados para compartilhar.",
+        primaryLabel: "Acompanhar documentos",
+        primaryNav: "documents",
+        secondaryLabel: "Enviar outro contrato",
+        secondaryNav: "analyze"
+      };
+    }
+
+    if (!summary.completed && summary.failed) {
+      return {
+        title: "Hora de tentar de novo",
+        text: "Os documentos enviados ainda nao concluiram uma analise valida. Revise o arquivo, tente outro formato ou envie uma nova versao.",
+        primaryLabel: "Ver documentos",
+        primaryNav: "documents",
+        secondaryLabel: "Nova analise",
+        secondaryNav: "analyze"
+      };
+    }
+
+    return {
+      title: "Continue alimentando seu painel",
+      text: "Voce ja tem analises concluidas. Envie mais contratos para comparar riscos e manter o historico atualizado.",
+      primaryLabel: "Enviar outro contrato",
+      primaryNav: "analyze",
+      secondaryLabel: "Ver resultados",
+      secondaryNav: "results"
+    };
+  }
+
+  function buildActivityAction(label, nav, documentId, page) {
+    if (!label) {
+      return "";
+    }
+
+    return '<button class="btn btn-outline btn-sm" type="button" data-nav="' +
+      escapeHtml(nav || "") +
+      '"' +
+      (documentId ? ' data-document-id="' + escapeHtml(documentId) + '"' : "") +
+      (page ? ' data-target-page="' + escapeHtml(page) + '"' : "") +
+      ">" +
+      escapeHtml(label) +
+      "</button>";
+  }
+
   function buildOverviewActivityFallback(documents) {
+    var summary = countDocumentsByStatus(documents);
+
     if (!Array.isArray(documents) || !documents.length) {
       return [
         {
@@ -1074,7 +1181,23 @@
           searchText: "envie seu primeiro contrato",
           statusKey: "all",
           typeKey: "all",
-          severityKey: "unknown"
+          severityKey: "unknown",
+          actionMarkup: buildActivityAction("Enviar contrato", "analyze")
+        }
+      ];
+    }
+
+    if (!summary.completed && (summary.uploaded || summary.analyzing)) {
+      return [
+        {
+          dotClass: "activity-dot--default",
+          html: "Seu painel esta sendo preparado com os primeiros documentos enviados.",
+          timeLabel: "Analise em andamento",
+          searchText: "primeiros documentos em analise",
+          statusKey: "analyzing",
+          typeKey: "all",
+          severityKey: "unknown",
+          actionMarkup: buildActivityAction("Abrir documentos", "documents")
         }
       ];
     }
@@ -1101,7 +1224,8 @@
         searchText: (documentItem.original_name || "") + " " + status.label,
         statusKey: normalizedStatus,
         typeKey: typeKey,
-        severityKey: getDocumentSeverityKey(documentItem)
+        severityKey: getDocumentSeverityKey(documentItem),
+        actionMarkup: buildActivityAction("Abrir", "documents", documentItem.id, "documents")
       };
     });
   }
@@ -1345,62 +1469,74 @@
       var typeKey = getDocumentTypeKey(documentItem);
 
       if (analysisItem && analysisItem.status === "completed") {
+        var criticalCount = risks.filter(function (risk) {
+          return normalizeSeverity(risk && risk.severity) === "critical";
+        }).length;
+        var attentionCount = risks.filter(function (risk) {
+          return normalizeSeverity(risk && risk.severity) === "attention";
+        }).length;
+
         if (hasCritical) {
           return {
             dotClass: "activity-dot--danger",
-            html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> com riscos criticos",
+            html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> terminou com " + escapeHtml(String(criticalCount)) + " risco" + (criticalCount > 1 ? "s criticos" : " critico"),
             timeLabel: formatRelativeDate(analysisItem.updated_at || documentItem.updated_at || documentItem.created_at),
             searchText: (documentItem.original_name || "") + " riscos criticos",
             statusKey: "completed",
             typeKey: typeKey,
-            severityKey: "critical"
+            severityKey: "critical",
+            actionMarkup: buildActivityAction("Ver riscos", "risks", documentItem.id, "risks")
           };
         }
 
         if (hasAttention) {
           return {
             dotClass: "activity-dot--warn",
-            html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> requer atencao",
+            html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> requer atencao em " + escapeHtml(String(attentionCount)) + " ponto" + (attentionCount > 1 ? "s" : ""),
             timeLabel: formatRelativeDate(analysisItem.updated_at || documentItem.updated_at || documentItem.created_at),
             searchText: (documentItem.original_name || "") + " requer atencao",
             statusKey: "completed",
             typeKey: typeKey,
-            severityKey: "attention"
+            severityKey: "attention",
+            actionMarkup: buildActivityAction("Abrir resultados", "results", documentItem.id, "results")
           };
         }
 
         return {
           dotClass: "activity-dot--safe",
-          html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> analisado sem riscos criticos",
+          html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> esta pronto para revisao e compartilhamento",
           timeLabel: formatRelativeDate(analysisItem.updated_at || documentItem.updated_at || documentItem.created_at),
           searchText: (documentItem.original_name || "") + " analisado seguro",
           statusKey: "completed",
           typeKey: typeKey,
-          severityKey: "safe"
+          severityKey: "safe",
+          actionMarkup: buildActivityAction("Ver resultados", "results", documentItem.id, "results")
         };
       }
 
       if (status === "analyzing" || status === "uploaded") {
         return {
           dotClass: "activity-dot--default",
-          html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> enviado para analise",
+          html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> entrou na fila de analise",
           timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at),
           searchText: (documentItem.original_name || "") + " enviado para analise",
           statusKey: status,
           typeKey: typeKey,
-          severityKey: "unknown"
+          severityKey: "unknown",
+          actionMarkup: buildActivityAction("Acompanhar", "documents", documentItem.id, "documents")
         };
       }
 
       if (status === "failed") {
         return {
           dotClass: "activity-dot--warn",
-          html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> precisa de revisao",
+          html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> falhou e precisa de uma nova tentativa",
           timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at),
           searchText: (documentItem.original_name || "") + " precisa de revisao",
           statusKey: "failed",
           typeKey: typeKey,
-          severityKey: "unknown"
+          severityKey: "unknown",
+          actionMarkup: buildActivityAction("Enviar novamente", "analyze", documentItem.id, "analyze")
         };
       }
 
@@ -1411,7 +1547,8 @@
         searchText: (documentItem.original_name || "") + " disponivel no painel",
         statusKey: status || "uploaded",
         typeKey: typeKey,
-        severityKey: "unknown"
+        severityKey: "unknown",
+        actionMarkup: buildActivityAction("Abrir", "documents", documentItem.id, "documents")
       };
     });
   }
@@ -2678,6 +2815,14 @@ function readFilePayload(file) {
     document.addEventListener("click", function (event) {
       var trigger = event.target.closest("[data-nav]");
       if (!trigger || navButtons.indexOf(trigger) !== -1) {
+        return;
+      }
+
+      var documentId = trigger.getAttribute("data-document-id");
+      var targetPage = trigger.getAttribute("data-target-page") || trigger.getAttribute("data-nav");
+
+      if (documentId) {
+        openDocument(documentId, targetPage);
         return;
       }
 

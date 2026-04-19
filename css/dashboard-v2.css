@@ -137,6 +137,7 @@ input,select,textarea{font-family:inherit}
 .btn-outline{background:var(--white);color:var(--text-2);border:1.5px solid var(--neutral-4)}
 .btn-outline:hover{border-color:var(--neutral-3);color:var(--text)}
 .btn-danger{background:var(--danger-lt);color:var(--danger);border:1.5px solid var(--danger-bd)}
+.btn-sm{padding:6px 12px;font-size:12px;margin-top:10px}
 
 /* â”€â”€ CARDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .card{background:var(--white);border:1px solid var(--neutral-4);border-radius:var(--r-lg);padding:20px}

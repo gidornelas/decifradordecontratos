@@ -125,10 +125,10 @@ Responsabilidades:
 1. Adicionar uma validacao operacional simples para o job de retencao
 2. Consolidar monitoramento de erro e execucao em producao
 3. Melhorar estados de carregamento e resiliencia das acoes do dashboard
-4. Refinar onboarding contextual apos o primeiro upload e primeira analise
-5. Revisar refinamentos finais de UX no dashboard com foco em empty states e atividade recente
+4. Refinar o dashboard com mais contexto por tipo de contrato e score
+5. Revisar refinamentos finais de UX no dashboard com foco em atividade recente e comparacao entre documentos
 
 ## Riscos Abertos
 
 - a UX final do dashboard ainda precisa refletir todos os dados reais das APIs
-- activity feed e onboarding ainda podem ganhar mais contexto apos os primeiros documentos reais
+- o dashboard ainda pode evoluir com contexto comparativo entre documentos e agrupamento por tipo de contrato

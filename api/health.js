@@ -15,7 +15,14 @@ module.exports = async function handler(req, res) {
       [
         "select",
         "1 as ok,",
-        "to_regclass('public.api_rate_limits') is not null as api_rate_limits_table_ready"
+        "to_regclass('public.api_rate_limits') is not null as api_rate_limits_table_ready,",
+        "exists (",
+        "select 1",
+        "from pg_indexes",
+        "where schemaname = 'public'",
+        "and tablename = 'api_rate_limits'",
+        "and indexname = 'api_rate_limits_last_request_at_idx'",
+        ") as api_rate_limits_index_ready"
       ].join(" ")
     );
     var storageStatus = storage.getStorageConfigStatus();
@@ -39,6 +46,14 @@ module.exports = async function handler(req, res) {
         cronSecretConfigured: Boolean(serverEnv.cronSecret),
         rateLimitTableConfigured: Boolean(
           dbResult.rows[0] && dbResult.rows[0].api_rate_limits_table_ready
+        ),
+        rateLimitIndexConfigured: Boolean(
+          dbResult.rows[0] && dbResult.rows[0].api_rate_limits_index_ready
+        ),
+        operabilityMigrationConfigured: Boolean(
+          dbResult.rows[0] &&
+            dbResult.rows[0].api_rate_limits_table_ready &&
+            dbResult.rows[0].api_rate_limits_index_ready
         ),
         retentionWindowsConfigured: Boolean(
           retentionWindows.documentDays &&

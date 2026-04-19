@@ -119,13 +119,12 @@ Responsabilidades:
 ## Proximos Passos Recomendados
 
 1. Aplicar e validar a migration `002_operability.sql` no Neon
-2. Confirmar `CRON_SECRET` e janelas de retencao em producao
-3. Fechar revisao de seguranca das rotas internas e auth
-4. Finalizar renderizacao real de resultados e riscos no frontend
-5. Adicionar uma validacao operacional simples para o job de retencao
+2. Fechar revisao de seguranca das rotas internas e auth
+3. Finalizar renderizacao real de resultados e riscos no frontend
+4. Adicionar uma validacao operacional simples para o job de retencao
+5. Consolidar monitoramento de erro e execucao em producao
 
 ## Riscos Abertos
 
-- a tabela `api_rate_limits` pode ainda nao estar aplicada em todos os ambientes
 - o job de retencao depende de configuracao correta de `CRON_SECRET`
 - a UX final do dashboard ainda precisa refletir todos os dados reais das APIs

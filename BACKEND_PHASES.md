@@ -204,7 +204,7 @@ Status:
 
 - [x] request IDs e logs estruturados nas rotas criticas
 - [x] rate limiting server-side com fallback seguro
-- [ ] migration `002_operability.sql` aplicada no Neon
+- [x] migration `002_operability.sql` validada no Neon
 - [x] endpoint interno de retencao e agenda no `vercel.json`
 - [x] limpeza automatica de documentos, sessoes e rate limits implementada
 - [ ] `CRON_SECRET` e janelas de retencao configurados na Vercel

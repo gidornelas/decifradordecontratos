@@ -325,6 +325,8 @@ O endpoint `GET /api/health` agora também retorna:
 - `privateStorageMissingVars`
 - `cronSecretConfigured`
 - `rateLimitTableConfigured`
+- `rateLimitIndexConfigured`
+- `operabilityMigrationConfigured`
 - `retentionWindowsConfigured`
 - `retentionWindows`
 

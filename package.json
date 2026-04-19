@@ -8,7 +8,10 @@
     "start": "node -e \"console.log('Start script is not used in this project.')\""
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.821.0",
     "@anthropic-ai/sdk": "^0.52.0",
+    "mammoth": "^1.9.0",
+    "pdf-parse": "^1.1.1",
     "pg": "^8.13.1"
   }
 }

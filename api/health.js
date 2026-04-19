@@ -1,6 +1,7 @@
 var env = require("../lib/env");
 var db = require("../lib/db");
 var http = require("../lib/http");
+var storage = require("../lib/storage");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -21,7 +22,8 @@ module.exports = async function handler(req, res) {
         databaseConfigured: Boolean(process.env.DATABASE_URL),
         databaseReachable: Boolean(dbResult.rows[0] && dbResult.rows[0].ok === 1),
         authSecretConfigured: Boolean(process.env.AUTH_SECRET),
-        claudeApiKeyConfigured: Boolean(process.env.CLAUDE_API_KEY)
+        claudeApiKeyConfigured: Boolean(process.env.CLAUDE_API_KEY),
+        privateStorageConfigured: storage.isStorageConfigured()
       }
     });
   } catch (error) {

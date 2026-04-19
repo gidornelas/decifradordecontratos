@@ -60,6 +60,7 @@ Implementado:
 - download protegido do arquivo pelo dono
 - exclusao de documento com limpeza no storage
 - healthcheck com diagnostico de storage
+- fallback automatico de modelo Claude quando o alias configurado nao existe mais
 
 ## Modulos
 
@@ -128,3 +129,4 @@ Responsabilidades:
 
 - o job de retencao depende de configuracao correta de `CRON_SECRET`
 - a UX final do dashboard ainda precisa refletir todos os dados reais das APIs
+- a validacao em producao da pipeline completa de analise ainda depende do redeploy com o fallback novo

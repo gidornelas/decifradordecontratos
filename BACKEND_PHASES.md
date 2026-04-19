@@ -154,6 +154,11 @@ Processar contratos reais via `Claude API`.
 - [x] `GET /api/documents/:id/analysis`
 - [x] extracao real para PDF e DOCX
 
+Status:
+
+- [x] fallback automatico de modelo para evitar quebra quando o alias configurado na Anthropic expira ou retorna `404`
+- [ ] validacao final de analise completa em producao apos ajuste de resiliencia
+
 ## Fase 6 - Dashboard real
 
 ### Objetivo
@@ -211,3 +216,4 @@ Status:
 - [x] `api/health` com checks operacionais de storage, cron e rate limiting
 - [x] primeiro pacote de endurecimento de seguranca em auth e rota interna
 - [x] segundo pacote de endurecimento em upload, storage e disparo de analises
+- [x] resiliencia da integracao Claude contra modelo configurado invalido/descontinuado

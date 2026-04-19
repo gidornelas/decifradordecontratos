@@ -189,6 +189,7 @@ Status:
 - [x] filtros do dashboard por status, tipo e severidade
 - [x] responsividade mobile refinada para topo, filtros e grids principais
 - [x] navegacao mobile da sidebar com drawer e atalhos rapidos persistentes
+- [x] exportacao e compartilhamento com feedback no fluxo de resultados
 
 ## Fase 7 - Producao
 

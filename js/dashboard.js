@@ -52,6 +52,9 @@
   var guidedDocSelect = document.getElementById("guided-doc-select");
   var resultsDocSelect = document.getElementById("results-doc-select");
   var exportPdfBtn = document.getElementById("export-pdf-btn");
+  var shareResultsBtn = document.getElementById("share-results-btn");
+  var copyResultsBtn = document.getElementById("copy-results-btn");
+  var resultsFeedback = document.getElementById("results-feedback");
   var settingsFullNameInput = document.getElementById("settings-full-name");
   var settingsEmailInput = document.getElementById("settings-email");
   var settingsPlanInput = document.getElementById("settings-plan");
@@ -83,6 +86,7 @@
   var currentGuidedTab = "resumo";
   var settingsLoaded = false;
   var mobileNavBreakpoint = window.matchMedia("(max-width: 980px)");
+  var resultsFeedbackTimer = null;
   var pageTitles = {
     overview: "Visão geral",
     documents: "Documentos",
@@ -288,6 +292,41 @@
     setMobileNavOpen(false);
   }
 
+  function setResultsFeedback(message, tone) {
+    if (!resultsFeedback) return;
+
+    if (resultsFeedbackTimer) {
+      window.clearTimeout(resultsFeedbackTimer);
+      resultsFeedbackTimer = null;
+    }
+
+    if (!message) {
+      resultsFeedback.hidden = true;
+      resultsFeedback.textContent = "";
+      resultsFeedback.removeAttribute("data-tone");
+      return;
+    }
+
+    resultsFeedback.hidden = false;
+    resultsFeedback.textContent = message;
+    resultsFeedback.setAttribute("data-tone", tone || "info");
+
+    if (tone !== "error") {
+      resultsFeedbackTimer = window.setTimeout(function () {
+        setResultsFeedback("", "");
+      }, 3200);
+    }
+  }
+
+  function setActionLoading(button, isLoading, loadingLabel, idleLabel) {
+    if (!button) return;
+    var label = button.querySelector(".btn-label");
+    button.disabled = isLoading;
+    if (label) {
+      label.textContent = isLoading ? loadingLabel : idleLabel;
+    }
+  }
+
   function switchPage(pageName) {
     pages.forEach(function (page) {
       page.classList.remove("active");
@@ -313,6 +352,10 @@
 
     if (pageName === "settings") {
       loadSettingsProfile(false);
+    }
+
+    if (pageName !== "results") {
+      setResultsFeedback("", "");
     }
 
     closeMobileNav();
@@ -1826,6 +1869,8 @@
     var verdictTitle = document.querySelector(".verdict-title");
     var verdictText = document.querySelector(".verdict-text");
 
+    setResultsFeedback("", "");
+
     if (scoreLabel) scoreLabel.textContent = "Sem análise";
     if (scoreDesc) scoreDesc.textContent = message;
     if (scoreValue) scoreValue.textContent = "--";
@@ -1884,6 +1929,8 @@
     var verdictText = document.querySelector(".verdict-text");
     var focusItems = buildFocusItems(result);
     var recommendationItems = buildRecommendationItems(result);
+
+    setResultsFeedback("", "");
 
     if (scoreValue) scoreValue.textContent = formatRiskScore(analysis.risk_score);
     if (scoreMax) scoreMax.textContent = "/100";
@@ -1974,6 +2021,139 @@
       "</div>",
       "</div>"
     ].join("");
+  }
+
+  function getCurrentAnalysisPayload() {
+    if (!currentDocumentId) {
+      return null;
+    }
+
+    return analysisCache[currentDocumentId] || null;
+  }
+
+  function buildResultsShareText() {
+    var documentItem = findDocumentById(currentDocumentId);
+    var payload = getCurrentAnalysisPayload();
+    var analysis = payload && payload.analysis ? payload.analysis : null;
+    var focusItems = payload ? buildFocusItems(payload).slice(0, 3) : [];
+    var recommendationItems = payload ? buildRecommendationItems(payload).slice(0, 3) : [];
+    var scoreMeta = getRiskScoreMeta(analysis && analysis.risk_score);
+    var lines = [];
+
+    if (!documentItem || !analysis) {
+      return "";
+    }
+
+    lines.push("Resumo da analise - " + (documentItem.original_name || "documento"));
+    lines.push("Risco: " + scoreMeta.label + " (" + formatRiskScore(analysis.risk_score) + "/100)");
+    lines.push("Tipo: " + (analysis.contract_type || "Contrato"));
+    lines.push("Atualizado em: " + formatDate(analysis.updated_at));
+    lines.push("");
+    lines.push("Resumo executivo:");
+    lines.push(analysis.summary || "Sem resumo disponivel.");
+
+    if (focusItems.length) {
+      lines.push("");
+      lines.push("Pontos para revisar:");
+      focusItems.forEach(function (item, index) {
+        lines.push((index + 1) + ". " + item);
+      });
+    }
+
+    if (recommendationItems.length) {
+      lines.push("");
+      lines.push("Acoes recomendadas:");
+      recommendationItems.forEach(function (item, index) {
+        lines.push((index + 1) + ". " + item);
+      });
+    }
+
+    return lines.join("\n");
+  }
+
+  async function copyResultsSummary() {
+    var summary = buildResultsShareText();
+
+    if (!summary) {
+      setResultsFeedback("Escolha um documento com analise concluida para copiar o resumo.", "error");
+      return;
+    }
+
+    if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+      setResultsFeedback("Seu navegador nao permite copiar automaticamente neste ambiente.", "error");
+      return;
+    }
+
+    setActionLoading(copyResultsBtn, true, "Copiando...", "Copiar resumo");
+
+    try {
+      await navigator.clipboard.writeText(summary);
+      setResultsFeedback("Resumo copiado para a area de transferencia.", "success");
+    } catch (error) {
+      setResultsFeedback("Nao foi possivel copiar o resumo agora.", "error");
+    } finally {
+      setActionLoading(copyResultsBtn, false, "Copiando...", "Copiar resumo");
+    }
+  }
+
+  async function shareResultsSummary() {
+    var documentItem = findDocumentById(currentDocumentId);
+    var payload = getCurrentAnalysisPayload();
+    var analysis = payload && payload.analysis ? payload.analysis : null;
+    var summary = buildResultsShareText();
+    var shareUrl = window.location.origin + window.location.pathname + "#page-results";
+
+    if (!documentItem || !analysis || !summary) {
+      setResultsFeedback("Escolha um documento com analise concluida para compartilhar.", "error");
+      return;
+    }
+
+    setActionLoading(shareResultsBtn, true, "Compartilhando...", "Compartilhar");
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Resumo da analise - " + (documentItem.original_name || "documento"),
+          text: summary,
+          url: shareUrl
+        });
+        setResultsFeedback("Resumo compartilhado com sucesso.", "success");
+        return;
+      }
+
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        await navigator.clipboard.writeText(summary + "\n\n" + shareUrl);
+        setResultsFeedback("Seu navegador nao suporta compartilhamento nativo. Copiamos o resumo para voce.", "info");
+        return;
+      }
+
+      setResultsFeedback("Compartilhamento nao disponivel neste navegador.", "error");
+    } catch (error) {
+      if (error && error.name === "AbortError") {
+        setResultsFeedback("Compartilhamento cancelado.", "info");
+      } else {
+        setResultsFeedback("Nao foi possivel compartilhar o resumo agora.", "error");
+      }
+    } finally {
+      setActionLoading(shareResultsBtn, false, "Compartilhando...", "Compartilhar");
+    }
+  }
+
+  function exportResultsAsPdf() {
+    var summary = buildResultsShareText();
+
+    if (!summary) {
+      setResultsFeedback("Escolha um documento com analise concluida para exportar.", "error");
+      return;
+    }
+
+    setActionLoading(exportPdfBtn, true, "Preparando...", "Exportar PDF");
+    setResultsFeedback("Abrindo a janela de impressao para salvar o resultado em PDF.", "info");
+
+    window.setTimeout(function () {
+      window.print();
+      setActionLoading(exportPdfBtn, false, "Preparando...", "Exportar PDF");
+    }, 120);
   }
 
   function renderAllAnalysisViews(documentItem, result) {
@@ -2581,8 +2761,18 @@ function readFilePayload(file) {
     }
 
     if (exportPdfBtn) {
-      exportPdfBtn.addEventListener("click", function () {
-        window.print();
+      exportPdfBtn.addEventListener("click", exportResultsAsPdf);
+    }
+
+    if (shareResultsBtn) {
+      shareResultsBtn.addEventListener("click", function () {
+        shareResultsSummary();
+      });
+    }
+
+    if (copyResultsBtn) {
+      copyResultsBtn.addEventListener("click", function () {
+        copyResultsSummary();
       });
     }
 

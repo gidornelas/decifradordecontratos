@@ -372,6 +372,10 @@ input,select,textarea{font-family:inherit}
 .results-score-label{font-size:15px;font-weight:700;color:var(--text)}
 .results-score-desc{font-size:12.5px;color:var(--neutral);margin-top:2px}
 .results-section{background:var(--white);border:1px solid var(--neutral-4);border-radius:var(--r-lg);padding:20px;margin-bottom:16px}
+.results-feedback{margin:-4px 0 16px;padding:12px 14px;border-radius:10px;border:1px solid var(--neutral-4);background:var(--white);font-size:13px;color:var(--text-2)}
+.results-feedback[data-tone="success"]{border-color:rgba(34,197,94,.28);background:var(--safe-lt);color:#166534}
+.results-feedback[data-tone="error"]{border-color:rgba(239,68,68,.28);background:var(--danger-lt);color:var(--danger)}
+.results-feedback[data-tone="info"]{border-color:rgba(37,99,235,.2);background:var(--blue-bg);color:var(--blue-dk)}
 .results-executive p{font-size:14px;line-height:1.75;color:var(--text-2);margin-bottom:14px}
 .results-clause-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--neutral-5)}
 .results-clause-row:last-child{border-bottom:none}

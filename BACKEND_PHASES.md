@@ -1,86 +1,83 @@
-# Backend por Fases — Execução
+# Backend por Fases - Execucao
 
 ## Status atual
 
-- `Fase 0`: concluída
-  - definição de stack `Neon + Vercel + Claude API`
-  - política de segredos
-  - organização do plano
+- `Fase 0`: concluida
+  - definicao de stack `Neon + Vercel + Claude API`
+  - politica de segredos
+  - organizacao do plano
 
-- `Fase 1`: concluída
-  - fundação reorganizada para Neon pronta
+- `Fase 1`: concluida
+  - fundacao reorganizada para Neon pronta
 
-- `Fase 2`: parcialmente concluída
-  - auth real ligada ao dashboard
+- `Fase 2`: parcialmente concluida
+  - auth real e perfil do usuario ligados ao dashboard
 
-- `Fase 4`: parcialmente concluída
-  - upload real de documentos com persistência no Neon
+- `Fase 3`: parcialmente concluida
+  - storage privado configurado e validado em producao
+
+- `Fase 4`: concluida
+  - upload real de documentos com persistencia no Neon e download protegido
 
 - `Fase 5`: em andamento
-  - base de análise com Claude em implementação
+  - base de analise com Claude em implementacao
 
 - `Fase 7`: em andamento
-  - observabilidade, rate limiting e reten??o autom?tica em evolu??o
+  - observabilidade, rate limiting e retencao automatica em evolucao
 
-## Fase 1 — Fundação
+## Fase 1 - Fundacao
 
 ### Objetivo
 
-Colocar a base mínima do backend online com `Vercel + Neon`.
+Colocar a base minima do backend online com `Vercel + Neon`.
 
 ### Escopo
 
 - estrutura de `api/` para Vercel Functions
 - helpers de ambiente
 - helpers HTTP
-- conexão com Neon
+- conexao com Neon
 - healthcheck
 - schema SQL inicial
-- base de autenticação
+- base de autenticacao
 
-### Entregáveis
+### Entregaveis
 
 - [x] `package.json` alinhado com Neon
-- [x] helper de conexão com Neon
+- [x] helper de conexao com Neon
 - [x] `api/health`
 - [x] schema SQL inicial para Neon
-- [x] estratégia inicial de auth
+- [x] estrategia inicial de auth
 
-### Critério de saída
+### Criterio de saida
 
 - projeto responde `GET /api/health`
 - backend consegue conectar no Neon
-- banco já tem modelo inicial para usuários, documentos e análises
+- banco ja tem modelo inicial para usuarios, documentos e analises
 
-## Fase 2 — Auth real no dashboard
+## Fase 2 - Auth real no dashboard
 
 ### Objetivo
 
-Trocar a autenticação fake do dashboard por autenticação real.
+Trocar a autenticacao fake do dashboard por autenticacao real.
 
 ### Escopo
 
 - cadastro
 - login
 - logout
-- sessão persistida
-- proteção de acesso ao dashboard
+- sessao persistida
+- protecao de acesso ao dashboard
 
-### Entregáveis
-
-- [ ] login real no dashboard
-- [ ] logout real
-- [ ] proteção de acesso
-- [ ] leitura do usuário atual
-
-Status:
+### Entregaveis
 
 - [x] login real no dashboard
 - [x] logout real
-- [x] leitura do usuário atual
-- [ ] proteção adicional de rotas no frontend
+- [x] leitura do usuario atual
+- [x] configuracoes de perfil ligadas ao backend
+- [ ] protecao adicional de rotas no frontend
 
-## Fase 3 — Banco e storage
+## Fase 3 - Banco e storage
 
 ### Objetivo
 
@@ -90,50 +87,49 @@ Subir a estrutura real de dados e arquivos.
 
 - aplicar schema no Neon
 - configurar storage privado
-- garantir vínculo entre usuário e documentos
+- garantir vinculo entre usuario e documentos
 
-### Entregáveis
+### Entregaveis
 
 - [ ] schema aplicado
-- [ ] storage configurado
-- [ ] vínculo user/document funcionando
+- [x] storage configurado
+- [x] vinculo user/document funcionando
 
 Status:
 
 - [x] suporte backend para storage privado S3-compatible
-- [ ] bucket configurado em produção
-- [ ] vínculo user/document validado com download real
-- [x] diagnóstico do healthcheck mostra exatamente quais variáveis de storage faltam
+- [x] bucket configurado em producao
+- [x] vinculo user/document validado com download real
+- [x] diagnostico do healthcheck mostra exatamente quais variaveis de storage faltam
 
-## Fase 4 — Upload real de contratos
+## Fase 4 - Upload real de contratos
 
 ### Objetivo
 
-Sair da simulação e aceitar contratos reais.
+Sair da simulacao e aceitar contratos reais.
 
 ### Escopo
 
 - endpoint de upload
-- persistência do documento
+- persistencia do documento
 - status inicial de processamento
 
-### Entregáveis
+### Entregaveis
 
-- [ ] `POST /api/documents/upload`
-- [ ] `GET /api/documents`
-- [ ] `GET /api/documents/:id`
-
+- [x] `POST /api/documents`
+- [x] `GET /api/documents`
 - [x] `GET /api/documents/:id`
+- [x] `GET /api/documents/:id/file`
 - [x] `GET /api/documents/:id/status`
 - [x] `DELETE /api/documents/:id`
 
 Status:
 
-- [x] `POST /api/documents` para upload persistido no Neon
-- [x] `GET /api/documents`
-- [ ] `GET /api/documents/:id`
+- [x] upload persistido no Neon
+- [x] download protegido do arquivo bruto
+- [x] exclusao com limpeza no storage
 
-## Fase 5 — Pipeline de análise com Claude
+## Fase 5 - Pipeline de analise com Claude
 
 ### Objetivo
 
@@ -141,20 +137,14 @@ Processar contratos reais via `Claude API`.
 
 ### Escopo
 
-- extração de texto
+- extracao de texto
 - chamada server-side para Claude
-- persistência de score, resumo, riscos e cláusulas
+- persistencia de score, resumo, riscos e clausulas
 
-### Entregáveis
+### Entregaveis
 
-- [ ] integração com Claude API
-- [ ] persistência de análise
-- [ ] estados `extracting`, `analyzing`, `completed`, `failed`
-
-Status:
-
-- [x] integração base com Claude API
-- [x] persistência de análise, riscos e cláusulas
+- [x] integracao base com Claude API
+- [x] persistencia de analise, riscos e clausulas
 - [x] estados `analyzing`, `completed`, `failed`
 - [x] `POST /api/analyses`
 - [x] `GET /api/analyses/:id`
@@ -162,9 +152,9 @@ Status:
 - [x] `GET /api/analyses/:id/risks`
 - [x] `GET /api/analyses/:id/guided-review`
 - [x] `GET /api/documents/:id/analysis`
-- [x] extra??o real para PDF e DOCX
+- [x] extracao real para PDF e DOCX
 
-## Fase 6 — Dashboard real
+## Fase 6 - Dashboard real
 
 ### Objetivo
 
@@ -177,46 +167,45 @@ Conectar o dashboard a dados reais.
 - riscos reais
 - leitura guiada real
 
-### Entregáveis
+### Entregaveis
 
-- [ ] dashboard alimentado por API
-- [ ] documentos reais
-- [ ] resultados reais
-- [ ] riscos reais
+- [x] dashboard alimentado por APIs base
+- [x] documentos reais
+- [ ] resultados reais renderizados no frontend
+- [ ] riscos reais renderizados no frontend
 
 Status:
 
 - [x] endpoints base de dashboard (`overview`, `recent-documents`, `risk-distribution`)
 - [x] documentos reais listados por API
-- [ ] resultados reais renderizados no frontend
-- [ ] riscos reais renderizados no frontend
+- [ ] refinamento final de renderizacao no frontend
 
-## Fase 7 — Produção
+## Fase 7 - Producao
 
 ### Objetivo
 
-Deixar o produto pronto para uso público.
+Deixar o produto pronto para uso publico.
 
 ### Escopo
 
 - rate limiting
 - logs estruturados
 - monitoramento
-- retenção de documentos
-- revisão de segurança
+- retencao de documentos
+- revisao de seguranca
 
-### Entregáveis
+### Entregaveis
 
-- [ ] revisão de segurança
-- [ ] política de retenção
-- [ ] observabilidade mínima
-
+- [ ] revisao de seguranca
+- [ ] politica de retencao completamente validada
+- [x] observabilidade minima
 
 Status:
 
-- [x] request IDs e logs estruturados nas rotas cr?ticas
+- [x] request IDs e logs estruturados nas rotas criticas
 - [x] rate limiting server-side com fallback seguro
 - [ ] migration `002_operability.sql` aplicada no Neon
-- [x] endpoint interno de reten??o e agenda no `vercel.json`
-- [x] limpeza autom?tica de documentos, sess?es e rate limits implementada
-- [ ] `CRON_SECRET` e janelas de reten??o configurados na Vercel
+- [x] endpoint interno de retencao e agenda no `vercel.json`
+- [x] limpeza automatica de documentos, sessoes e rate limits implementada
+- [ ] `CRON_SECRET` e janelas de retencao configurados na Vercel
+- [x] `api/health` com checks operacionais de storage, cron e rate limiting

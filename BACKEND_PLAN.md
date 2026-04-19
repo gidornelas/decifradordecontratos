@@ -61,6 +61,7 @@ Implementado:
 - exclusao de documento com limpeza no storage
 - healthcheck com diagnostico de storage
 - fallback automatico de modelo Claude quando o alias configurado nao existe mais
+- `CRON_SECRET` configurado e refletido no `api/health`
 
 ## Modulos
 
@@ -127,6 +128,5 @@ Responsabilidades:
 
 ## Riscos Abertos
 
-- o job de retencao depende de configuracao correta de `CRON_SECRET`
 - a UX final do dashboard ainda precisa refletir todos os dados reais das APIs
 - a navegacao mobile ainda pode evoluir com uma sidebar mais dedicada e atalhos mais compactos

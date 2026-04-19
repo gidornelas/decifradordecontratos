@@ -331,3 +331,12 @@ O endpoint `GET /api/health` agora também retorna:
 - `retentionWindows`
 
 Isso facilita validar rapidamente o que ainda falta sem expor segredos.
+
+## Estado Atual do Cron em Producao
+
+O ambiente de producao ja confirma:
+
+- `cronSecretConfigured: true`
+- `retentionWindowsConfigured: true`
+
+Entao `CRON_SECRET` nao esta mais pendente no projeto publicado.

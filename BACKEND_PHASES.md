@@ -176,14 +176,15 @@ Conectar o dashboard a dados reais.
 
 - [x] dashboard alimentado por APIs base
 - [x] documentos reais
-- [ ] resultados reais renderizados no frontend
-- [ ] riscos reais renderizados no frontend
+- [x] resultados reais renderizados no frontend
+- [x] riscos reais renderizados no frontend
 
 Status:
 
 - [x] endpoints base de dashboard (`overview`, `recent-documents`, `risk-distribution`)
 - [x] documentos reais listados por API
-- [ ] refinamento final de renderizacao no frontend
+- [x] results e risks conectados ao payload real de analise
+- [ ] refinamento final de overview e atividade recente no frontend
 
 ## Fase 7 - Producao
 

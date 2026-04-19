@@ -9,7 +9,7 @@ O projeto saiu do estado frontend-only e ja possui backend operacional em produc
 - upload de documentos
 - storage privado via Cloudflare R2
 - analise server-side com Claude
-- dashboard alimentado por APIs base
+- dashboard alimentado por APIs base e seções de results/risks ligadas à análise real
 - healthcheck operacional
 
 Ainda faltam refinamentos para fechar o ciclo de producao, principalmente em operabilidade, revisao de seguranca e renderizacao final do dashboard.
@@ -119,14 +119,14 @@ Responsabilidades:
 
 ## Proximos Passos Recomendados
 
-1. Aplicar e validar a migration `002_operability.sql` no Neon
-2. Fechar revisao de seguranca das rotas internas e auth
-3. Finalizar renderizacao real de resultados e riscos no frontend
-4. Adicionar uma validacao operacional simples para o job de retencao
-5. Consolidar monitoramento de erro e execucao em producao
+1. Refinar `overview` e atividade recente para refletirem dados reais das análises
+2. Adicionar uma validacao operacional simples para o job de retencao
+3. Consolidar monitoramento de erro e execucao em producao
+4. Revisar UX de exportacao e compartilhamento dos resultados
+5. Fechar protecoes adicionais de rotas no frontend
 
 ## Riscos Abertos
 
 - o job de retencao depende de configuracao correta de `CRON_SECRET`
 - a UX final do dashboard ainda precisa refletir todos os dados reais das APIs
-- a validacao em producao da pipeline completa de analise ainda depende do redeploy com o fallback novo
+- overview e atividade recente ainda misturam placeholders com dados reais

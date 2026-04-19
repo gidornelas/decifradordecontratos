@@ -536,7 +536,7 @@
       };
     }
 
-    if (score <= 3.9) {
+    if (score >= 70) {
       return {
         label: "Risco Alto",
         description: "Requer atenção antes de assinar",
@@ -544,7 +544,7 @@
       };
     }
 
-    if (score <= 6.9) {
+    if (score >= 40) {
       return {
         label: "Risco Moderado",
         description: "Vale revisar antes de seguir",
@@ -559,6 +559,16 @@
     };
   }
 
+  function formatRiskScore(scoreValue) {
+    var score = Number(scoreValue);
+
+    if (!Number.isFinite(score)) {
+      return "--";
+    }
+
+    return String(Math.max(0, Math.min(100, Math.round(score))));
+  }
+
   function setRingTone(element, ringClass) {
     if (!element) return;
     element.classList.remove("ring--danger", "ring--warn", "ring--safe");
@@ -571,6 +581,17 @@
 
     clauses.forEach(function (clause) {
       var severity = normalizeSeverity(clause && clause.severity);
+      counts[severity] = (counts[severity] || 0) + 1;
+    });
+
+    return counts;
+  }
+
+  function countItemsBySeverity(items) {
+    var counts = { critical: 0, attention: 0, safe: 0, neutral: 0 };
+
+    (Array.isArray(items) ? items : []).forEach(function (item) {
+      var severity = normalizeSeverity(item && item.severity);
       counts[severity] = (counts[severity] || 0) + 1;
     });
 
@@ -850,6 +871,40 @@
     });
   }
 
+  function buildFocusItems(result) {
+    return buildRiskItems(result)
+      .filter(function (item) {
+        var severity = normalizeSeverity(item.severity);
+        return severity === "critical" || severity === "attention";
+      })
+      .slice(0, 5)
+      .map(function (item) {
+        return item.title + (item.clauseNumber ? " (Cl. " + item.clauseNumber + ")" : "");
+      });
+  }
+
+  function buildRecommendationItems(result) {
+    var items = [];
+    var risks = Array.isArray(result && result.risks) ? result.risks : [];
+
+    risks.forEach(function (risk) {
+      var text = risk.recommendation || risk.impact_description || risk.simplified_explanation;
+      if (text) {
+        items.push(text);
+      }
+    });
+
+    if (!items.length) {
+      buildChecklistItems(result).forEach(function (item) {
+        if (item && item.text) {
+          items.push(item.text);
+        }
+      });
+    }
+
+    return items.slice(0, 5);
+  }
+
   function renderChecklist(items) {
     var checklistRoot = document.getElementById("checklist-items");
     var checklistLabel = document.getElementById("checklist-label");
@@ -946,8 +1001,8 @@
 
     if (titleEl) titleEl.textContent = documentItem.original_name || "documento";
     if (metaEl) metaEl.textContent = (analysis.contract_type || "Contrato") + " · " + formatDate(analysis.updated_at) + " · " + (Array.isArray(result.clauses) ? result.clauses.length : 0) + " cláusulas";
-    if (scoreValue) scoreValue.textContent = Number.isFinite(Number(analysis.risk_score)) ? Number(analysis.risk_score).toFixed(1) : "--";
-    if (scoreMax) scoreMax.textContent = "/10";
+    if (scoreValue) scoreValue.textContent = formatRiskScore(analysis.risk_score);
+    if (scoreMax) scoreMax.textContent = "/100";
     setRingTone(scoreRing, scoreMeta.ringClass);
     renderBreakdownBar(breakdownEl, buildBreakdown(result));
     risksEl.innerHTML = risks.length
@@ -956,7 +1011,7 @@
   }
 
   function renderRisksEmpty(message) {
-    var riskGroupsRoot = document.querySelector("#page-risks .risk-layout > div:last-child");
+    var riskGroupsRoot = document.getElementById("risk-groups-root");
     var counts = document.querySelectorAll(".risk-count-num");
 
     Array.prototype.forEach.call(counts, function (countEl) {
@@ -980,11 +1035,11 @@
   }
 
   function renderRisksView(documentItem, result) {
-    var riskGroupsRoot = document.querySelector("#page-risks .risk-layout > div:last-child");
-    var counts = buildBreakdown(result);
+    var riskGroupsRoot = document.getElementById("risk-groups-root");
+    var items = buildRiskItems(result);
+    var counts = countItemsBySeverity(items);
     var riskCounts = document.querySelectorAll(".risk-count-num");
     var grouped = {};
-    var items = buildRiskItems(result);
 
     if (riskCounts[0]) riskCounts[0].textContent = String(counts.critical);
     if (riskCounts[1]) riskCounts[1].textContent = String(counts.attention);
@@ -1093,8 +1148,8 @@
     if (summaryTitle) summaryTitle.textContent = documentItem.original_name || "documento";
     if (summaryMeta) summaryMeta.textContent = (analysis.contract_type || "Contrato") + " · " + (Array.isArray(result.clauses) ? result.clauses.length : 0) + " cláusulas · " + formatDate(analysis.updated_at);
     if (summaryText) summaryText.innerHTML = escapeHtml(analysis.summary || "Sem resumo disponível.");
-    if (summaryValue) summaryValue.textContent = Number.isFinite(Number(analysis.risk_score)) ? Number(analysis.risk_score).toFixed(1) : "--";
-    if (summaryMax) summaryMax.textContent = "/10";
+    if (summaryValue) summaryValue.textContent = formatRiskScore(analysis.risk_score);
+    if (summaryMax) summaryMax.textContent = "/100";
     setRingTone(summaryRing, scoreMeta.ringClass);
     renderBreakdownBar(breakdownBar, counts);
     renderBreakdownLegend(breakdownLegend, counts);
@@ -1147,7 +1202,11 @@
     var scoreMax = document.querySelector("#page-results .ring-max");
     var metaValues = document.querySelectorAll(".results-meta-value");
     var executive = document.querySelector(".results-executive p");
-    var clauseRows = document.querySelectorAll(".results-clause-row");
+    var clausesSection = document.getElementById("results-clauses-section");
+    var focusList = document.getElementById("results-focus-list");
+    var actionsList = document.getElementById("results-actions-list");
+    var deadlinesRoot = document.getElementById("results-deadlines-list");
+    var deadlinesTitle = document.getElementById("results-deadlines-title");
     var verdictTitle = document.querySelector(".verdict-title");
     var verdictText = document.querySelector(".verdict-text");
 
@@ -1163,13 +1222,25 @@
 
     if (executive) executive.textContent = message;
 
-    Array.prototype.forEach.call(clauseRows, function (row, index) {
-      if (index > 0) {
-        row.remove();
-      } else {
-        row.innerHTML = '<div class="table-empty">' + escapeHtml(message) + "</div>";
-      }
-    });
+    if (clausesSection) {
+      clausesSection.innerHTML = '<div class="analysis-section-title">Clausulas Identificadas</div><div class="table-empty">' + escapeHtml(message) + "</div>";
+    }
+
+    if (focusList) {
+      focusList.innerHTML = "<li>" + escapeHtml(message) + "</li>";
+    }
+
+    if (actionsList) {
+      actionsList.innerHTML = "<li>" + escapeHtml(message) + "</li>";
+    }
+
+    if (deadlinesTitle) {
+      deadlinesTitle.textContent = "Linha do tempo da analise";
+    }
+
+    if (deadlinesRoot) {
+      deadlinesRoot.innerHTML = '<div class="table-empty">' + escapeHtml(message) + "</div>";
+    }
 
     if (verdictTitle) verdictTitle.textContent = "Análise indisponível";
     if (verdictText) verdictText.textContent = message;
@@ -1188,14 +1259,18 @@
     var executive = document.querySelector(".results-executive p");
     var executiveBreakdown = document.querySelector("#page-results .analysis-breakdown-bar");
     var executiveLegend = executive && executive.parentElement ? executive.parentElement.querySelector("div[style*='display:flex;gap:16px']") : null;
-    var clausesSection = document.querySelectorAll(".results-section")[1];
-    var obligationLists = document.querySelectorAll(".obl-list");
-    var deadlinesRoot = document.querySelector(".deadlines");
+    var clausesSection = document.getElementById("results-clauses-section");
+    var focusList = document.getElementById("results-focus-list");
+    var actionsList = document.getElementById("results-actions-list");
+    var deadlinesRoot = document.getElementById("results-deadlines-list");
+    var deadlinesTitle = document.getElementById("results-deadlines-title");
     var verdictTitle = document.querySelector(".verdict-title");
     var verdictText = document.querySelector(".verdict-text");
+    var focusItems = buildFocusItems(result);
+    var recommendationItems = buildRecommendationItems(result);
 
-    if (scoreValue) scoreValue.textContent = Number.isFinite(Number(analysis.risk_score)) ? Number(analysis.risk_score).toFixed(1) : "--";
-    if (scoreMax) scoreMax.textContent = "/10";
+    if (scoreValue) scoreValue.textContent = formatRiskScore(analysis.risk_score);
+    if (scoreMax) scoreMax.textContent = "/100";
     if (scoreLabel) scoreLabel.textContent = scoreMeta.label;
     if (scoreDesc) scoreDesc.textContent = scoreMeta.description;
     setRingTone(scoreRing, scoreMeta.ringClass);
@@ -1227,29 +1302,32 @@
           : '<div class="table-empty">Sem cláusulas para exibir.</div>');
     }
 
-    if (obligationLists[0]) {
-      obligationLists[0].innerHTML = buildChecklistItems(result)
-        .slice(0, 4)
+    if (focusList) {
+      focusList.innerHTML = (focusItems.length ? focusItems : ["Nenhum ponto de atenção destacado."])
         .map(function (item) {
-          return "<li>" + escapeHtml(item.title) + "</li>";
+          return "<li>" + escapeHtml(item) + "</li>";
         })
         .join("");
     }
 
-    if (obligationLists[1]) {
-      obligationLists[1].innerHTML = [
-        "<li>Entregar o documento conforme descrito no contrato</li>",
-        "<li>Responder pelas obrigações da parte contrária</li>",
-        "<li>Formalizar ajustes solicitados antes da assinatura</li>"
-      ].join("");
+    if (actionsList) {
+      actionsList.innerHTML = (recommendationItems.length ? recommendationItems : ["Sem recomendações adicionais no momento."])
+        .map(function (item) {
+          return "<li>" + escapeHtml(item) + "</li>";
+        })
+        .join("");
+    }
+
+    if (deadlinesTitle) {
+      deadlinesTitle.textContent = "Linha do tempo da análise";
     }
 
     if (deadlinesRoot) {
       deadlinesRoot.innerHTML = [
-        createDeadlineCard("Análise gerada em", formatDate(analysis.updated_at), ""),
-        createDeadlineCard("Documento enviado", formatDate(documentItem.created_at), "danger"),
-        createDeadlineCard("Status", getStatusMeta(documentItem.processing_status).label, "warn"),
-        createDeadlineCard("Próximo passo", "Revisar recomendações", "")
+        createDeadlineCard("Documento enviado", formatDate(documentItem.created_at), ""),
+        createDeadlineCard("Análise gerada em", formatDate(analysis.updated_at), "danger"),
+        createDeadlineCard("Status atual", getStatusMeta(documentItem.processing_status).label, "warn"),
+        createDeadlineCard("Próximo passo", recommendationItems[0] || "Revisar recomendações", "")
       ].join("");
     }
 

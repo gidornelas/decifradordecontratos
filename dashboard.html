@@ -32,6 +32,10 @@
           <span id="login-error-text">E-mail ou senha incorretos</span>
         </div>
         <form class="login__form" id="login-form">
+          <div class="login__field" id="login-name-field" hidden>
+            <label class="login__label" for="login-name">Nome completo</label>
+            <input class="login__input" type="text" id="login-name" placeholder="Seu nome" autocomplete="name">
+          </div>
           <div class="login__field">
             <label class="login__label" for="login-email">E-mail</label>
             <input class="login__input" type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" required>
@@ -49,7 +53,7 @@
           </div>
           <button type="submit" class="login__submit">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-            Entrar
+            <span class="login__submit-text">Entrar</span>
           </button>
         </form>
         <div class="login__divider">ou</div>
@@ -231,12 +235,12 @@
           </div>
         </div>
 
-        <div class="app__table">
+        <div class="app__table" id="overview-documents-table">
           <div class="app__table-head">
             <span>Documento</span>
             <span>Tipo</span>
             <span>Data</span>
-            <span>Risco</span>
+            <span>Status</span>
             <span></span>
           </div>
           <div class="app__table-row" data-doc="contrato_aluguel">
@@ -346,7 +350,17 @@
             </a>
           </div>
         </div>
-        <div class="app__empty-state">
+        <div class="app__table" id="documents-table" hidden>
+          <div class="app__table-head">
+            <span>Documento</span>
+            <span>Tipo</span>
+            <span>Data</span>
+            <span>Status</span>
+            <span></span>
+          </div>
+          <div id="documents-table-body"></div>
+        </div>
+        <div class="app__empty-state" id="documents-empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           <p class="app__empty-state-title">Todos os documentos em um so lugar</p>
           <p class="app__empty-state-text">Envie seu primeiro contrato para comecar a analise. Acompanhe riscos, prazos e obrigacoes automaticamente.</p>

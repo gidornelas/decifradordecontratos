@@ -1188,6 +1188,17 @@
   border-bottom: none;
 }
 
+.app__table-empty {
+  padding: var(--space-6);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--color-neutral-500);
+}
+
+.app__table-empty strong {
+  color: var(--color-neutral-700);
+}
+
 .app__table-doc {
   display: flex;
   align-items: center;

@@ -39,6 +39,9 @@
   var settingsSaveButton = document.getElementById("settings-save-btn");
   var settingsFeedback = document.getElementById("settings-feedback");
   var settingsSessionStatus = document.getElementById("settings-session-status");
+  var settingsStorageTitle = document.getElementById("settings-storage-title");
+  var settingsStorageDetail = document.getElementById("settings-storage-detail");
+  var settingsStorageDot = document.getElementById("settings-storage-dot");
   var riskFilters = Array.prototype.slice.call(document.querySelectorAll(".risk-filter"));
   var guidedTabs = Array.prototype.slice.call(document.querySelectorAll(".guided-tab"));
   var pages = Array.prototype.slice.call(document.querySelectorAll(".page"));
@@ -319,6 +322,32 @@
       : " Salvar perfil";
   }
 
+  function renderStorageStatus(checks) {
+    if (!settingsStorageTitle || !settingsStorageDetail || !settingsStorageDot) {
+      return;
+    }
+
+    var isConfigured = Boolean(checks && checks.privateStorageConfigured);
+    var missingVars = Array.isArray(checks && checks.privateStorageMissingVars)
+      ? checks.privateStorageMissingVars
+      : [];
+
+    settingsStorageDot.classList.remove("activity-dot--safe", "activity-dot--warn", "activity-dot--danger");
+
+    if (isConfigured) {
+      settingsStorageDot.classList.add("activity-dot--safe");
+      settingsStorageTitle.textContent = "configurado";
+      settingsStorageDetail.textContent = "Uploads privados e download protegido estão habilitados.";
+      return;
+    }
+
+    settingsStorageDot.classList.add("activity-dot--warn");
+    settingsStorageTitle.textContent = "ainda não configurado";
+    settingsStorageDetail.textContent = missingVars.length
+      ? "Variáveis ausentes: " + missingVars.join(", ")
+      : "Faltam credenciais de storage no backend de produção.";
+  }
+
   async function loadSettingsProfile(forceRefresh) {
     if (!forceRefresh && settingsLoaded && currentUser) {
       populateSettingsFields(currentUser);
@@ -340,6 +369,13 @@
         error.message || "Não foi possível carregar seu perfil agora.",
         "error"
       );
+    }
+
+    try {
+      var healthData = await requestJson("/api/health", { method: "GET" });
+      renderStorageStatus(healthData && healthData.checks);
+    } catch (error) {
+      renderStorageStatus(null);
     }
   }
 

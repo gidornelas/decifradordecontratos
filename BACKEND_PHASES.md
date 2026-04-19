@@ -103,6 +103,7 @@ Status:
 - [x] suporte backend para storage privado S3-compatible
 - [ ] bucket configurado em produção
 - [ ] vínculo user/document validado com download real
+- [x] diagnóstico do healthcheck mostra exatamente quais variáveis de storage faltam
 
 ## Fase 4 — Upload real de contratos
 

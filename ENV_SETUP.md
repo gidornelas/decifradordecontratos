@@ -307,3 +307,21 @@ Depois deste arquivo, o próximo passo ideal é:
 - criar schema inicial do Neon
 - definir estratégia final de auth
 - integrar login real no dashboard
+
+## Estado Atual do Storage em Produção
+
+Hoje o backend já suporta storage privado S3-compatible, mas ele só fica ativo quando estas variáveis existem na Vercel:
+
+```text
+STORAGE_S3_ENDPOINT
+STORAGE_S3_BUCKET
+STORAGE_S3_ACCESS_KEY_ID
+STORAGE_S3_SECRET_ACCESS_KEY
+```
+
+O endpoint `GET /api/health` agora também retorna:
+
+- `privateStorageConfigured`
+- `privateStorageMissingVars`
+
+Isso facilita validar rapidamente o que ainda falta sem expor segredos.

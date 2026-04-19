@@ -11,6 +11,7 @@ module.exports = async function handler(req, res) {
   try {
     var publicEnv = env.getPublicEnv();
     var dbResult = await db.query("select 1 as ok");
+    var storageStatus = storage.getStorageConfigStatus();
 
     return http.ok(res, {
       ok: true,
@@ -23,7 +24,8 @@ module.exports = async function handler(req, res) {
         databaseReachable: Boolean(dbResult.rows[0] && dbResult.rows[0].ok === 1),
         authSecretConfigured: Boolean(process.env.AUTH_SECRET),
         claudeApiKeyConfigured: Boolean(process.env.CLAUDE_API_KEY),
-        privateStorageConfigured: storage.isStorageConfigured()
+        privateStorageConfigured: storageStatus.configured,
+        privateStorageMissingVars: storageStatus.missingVars
       }
     });
   } catch (error) {

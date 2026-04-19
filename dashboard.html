@@ -134,6 +134,26 @@
       <input type="search" id="dashboard-search" placeholder="Buscar contratos...">
     </div>
     <div class="topbar-actions">
+      <select class="app-select" id="dashboard-filter-status" title="Filtrar por status">
+        <option value="all">Todos os status</option>
+        <option value="completed">Concluídos</option>
+        <option value="analyzing">Em análise</option>
+        <option value="uploaded">Enviados</option>
+        <option value="failed">Com erro</option>
+      </select>
+      <select class="app-select" id="dashboard-filter-type" title="Filtrar por tipo">
+        <option value="all">Todos os tipos</option>
+        <option value="pdf">PDF</option>
+        <option value="docx">DOCX</option>
+        <option value="txt">TXT</option>
+      </select>
+      <select class="app-select" id="dashboard-filter-severity" title="Filtrar por severidade">
+        <option value="all">Todas as severidades</option>
+        <option value="critical">Crítico</option>
+        <option value="attention">Atenção</option>
+        <option value="safe">Seguro</option>
+        <option value="unknown">Sem análise</option>
+      </select>
       <button class="topbar-btn" title="Notificações">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="notif-dot"></span>

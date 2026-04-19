@@ -186,6 +186,7 @@ Status:
 - [x] results e risks conectados ao payload real de analise
 - [x] overview e atividade recente conectados aos dados reais do dashboard
 - [x] busca do dashboard aplicada sobre documentos e estados vazios reais
+- [x] filtros do dashboard por status, tipo e severidade
 
 ## Fase 7 - Producao
 

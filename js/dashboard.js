@@ -17,6 +17,9 @@
   var logoutButton = document.getElementById("logout-btn");
   var topbarTitle = document.getElementById("topbar-title");
   var dashboardSearchInput = document.getElementById("dashboard-search");
+  var dashboardFilterStatus = document.getElementById("dashboard-filter-status");
+  var dashboardFilterType = document.getElementById("dashboard-filter-type");
+  var dashboardFilterSeverity = document.getElementById("dashboard-filter-severity");
   var userNameEl = document.querySelector(".user-name");
   var userEmailEl = document.querySelector(".user-email");
   var userAvatarEl = document.querySelector(".user-avatar");
@@ -67,6 +70,10 @@
   var overviewActivityCache = {};
   var overviewActivityItems = [];
   var currentSearchQuery = "";
+  var currentStatusFilter = "all";
+  var currentTypeFilter = "all";
+  var currentSeverityFilter = "all";
+  var documentSeverityCache = {};
   var currentDocumentId = "";
   var currentUser = null;
   var currentRiskFilter = "all";
@@ -705,6 +712,18 @@
     return String(currentSearchQuery || "").trim().toLowerCase();
   }
 
+  function getDocumentTypeKey(documentItem) {
+    return String(getFileExtension(documentItem && documentItem.original_name) || "").toLowerCase();
+  }
+
+  function normalizeStatusFilterValue(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function getDocumentSeverityKey(documentItem) {
+    return documentSeverityCache[documentItem && documentItem.id] || "unknown";
+  }
+
   function filterDocumentsBySearch(documents) {
     var query = getSearchQuery();
 
@@ -725,6 +744,28 @@
     });
   }
 
+  function filterDocuments(documents) {
+    return filterDocumentsBySearch(documents).filter(function (documentItem) {
+      var status = normalizeStatusFilterValue(documentItem && documentItem.processing_status);
+      var typeKey = getDocumentTypeKey(documentItem);
+      var severityKey = getDocumentSeverityKey(documentItem);
+
+      if (currentStatusFilter !== "all" && status !== currentStatusFilter) {
+        return false;
+      }
+
+      if (currentTypeFilter !== "all" && typeKey !== currentTypeFilter) {
+        return false;
+      }
+
+      if (currentSeverityFilter !== "all" && severityKey !== currentSeverityFilter) {
+        return false;
+      }
+
+      return true;
+    });
+  }
+
   function filterOverviewActivityItems(items) {
     var query = getSearchQuery();
 
@@ -734,7 +775,27 @@
 
     return (Array.isArray(items) ? items : []).filter(function (item) {
       var searchable = String(item && item.searchText || "").toLowerCase();
-      return searchable.indexOf(query) !== -1;
+      var statusKey = String(item && item.statusKey || "all").toLowerCase();
+      var typeKey = String(item && item.typeKey || "all").toLowerCase();
+      var severityKey = String(item && item.severityKey || "unknown").toLowerCase();
+
+      if (query && searchable.indexOf(query) === -1) {
+        return false;
+      }
+
+      if (currentStatusFilter !== "all" && statusKey !== currentStatusFilter) {
+        return false;
+      }
+
+      if (currentTypeFilter !== "all" && typeKey !== currentTypeFilter) {
+        return false;
+      }
+
+      if (currentSeverityFilter !== "all" && severityKey !== currentSeverityFilter) {
+        return false;
+      }
+
+      return true;
     });
   }
 
@@ -834,9 +895,15 @@
   }
 
   function getDocumentSearchEmptyMessage() {
-    return getSearchQuery()
-      ? 'Nenhum documento encontrado para "' + escapeHtml(currentSearchQuery) + '".'
-      : "Nenhum documento enviado ainda.";
+    if (getSearchQuery()) {
+      return 'Nenhum documento encontrado para "' + escapeHtml(currentSearchQuery) + '".';
+    }
+
+    if (currentStatusFilter !== "all" || currentTypeFilter !== "all" || currentSeverityFilter !== "all") {
+      return "Nenhum documento corresponde aos filtros selecionados.";
+    }
+
+    return "Nenhum documento enviado ainda.";
   }
 
   function buildOverviewActivityFallback(documents) {
@@ -846,13 +913,18 @@
           dotClass: "activity-dot--default",
           html: "Envie seu primeiro contrato para começar a montar o painel.",
           timeLabel: "Sem atividade ainda",
-          searchText: "envie seu primeiro contrato"
+          searchText: "envie seu primeiro contrato",
+          statusKey: "all",
+          typeKey: "all",
+          severityKey: "unknown"
         }
       ];
     }
 
     return documents.slice(0, 4).map(function (documentItem) {
       var status = getStatusMeta(documentItem.processing_status);
+      var normalizedStatus = normalizeStatusFilterValue(documentItem.processing_status);
+      var typeKey = getDocumentTypeKey(documentItem);
       return {
         dotClass:
           status.className === "badge--critical"
@@ -868,7 +940,10 @@
           "</strong> " +
           escapeHtml(status.label.toLowerCase()),
         timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at),
-        searchText: (documentItem.original_name || "") + " " + status.label
+        searchText: (documentItem.original_name || "") + " " + status.label,
+        statusKey: normalizedStatus,
+        typeKey: typeKey,
+        severityKey: getDocumentSeverityKey(documentItem)
       };
     });
   }
@@ -1030,6 +1105,52 @@
     setOverviewDistributionFill(overviewSafeFill, safe, totalRiskItems);
   }
 
+  async function hydrateDocumentSeverityCache(documents) {
+    var sourceDocuments = Array.isArray(documents) ? documents : [];
+
+    await Promise.all(
+      sourceDocuments.map(async function (documentItem) {
+        var response;
+        var payload;
+        var risks;
+
+        if (!documentItem || !documentItem.id || Object.prototype.hasOwnProperty.call(documentSeverityCache, documentItem.id)) {
+          return;
+        }
+
+        response = await requestJsonDetailed(
+          "/api/documents/" + encodeURIComponent(documentItem.id) + "/analysis",
+          { method: "GET" }
+        );
+
+        if (!response.ok) {
+          documentSeverityCache[documentItem.id] = "unknown";
+          return;
+        }
+
+        payload = response.payload || {};
+        risks = Array.isArray(payload.risks) ? payload.risks : [];
+
+        if (risks.some(function (risk) { return normalizeSeverity(risk && risk.severity) === "critical"; })) {
+          documentSeverityCache[documentItem.id] = "critical";
+          return;
+        }
+
+        if (risks.some(function (risk) { return normalizeSeverity(risk && risk.severity) === "attention"; })) {
+          documentSeverityCache[documentItem.id] = "attention";
+          return;
+        }
+
+        if ((payload.analysis && payload.analysis.status === "completed") || risks.some(function (risk) { return normalizeSeverity(risk && risk.severity) === "safe"; })) {
+          documentSeverityCache[documentItem.id] = "safe";
+          return;
+        }
+
+        documentSeverityCache[documentItem.id] = "unknown";
+      })
+    );
+  }
+
   function renderOverviewActivity(items) {
     if (!overviewActivityList) return;
 
@@ -1044,8 +1165,101 @@
       .join("");
   }
 
+  async function buildOverviewActivityFiltered(documents) {
+    var sourceDocuments = Array.isArray(documents) ? documents.slice(0, 4) : [];
+    var analyses = await Promise.all(
+      sourceDocuments.map(function (documentItem) {
+        return getAnalysisForOverview(documentItem.id);
+      })
+    );
+
+    return sourceDocuments.map(function (documentItem, index) {
+      var analysisPayload = analyses[index];
+      var analysisItem = analysisPayload && analysisPayload.analysis ? analysisPayload.analysis : null;
+      var risks = analysisPayload && Array.isArray(analysisPayload.risks) ? analysisPayload.risks : [];
+      var hasCritical = risks.some(function (risk) {
+        return normalizeSeverity(risk && risk.severity) === "critical";
+      });
+      var hasAttention = risks.some(function (risk) {
+        return normalizeSeverity(risk && risk.severity) === "attention";
+      });
+      var status = normalizeStatusFilterValue(documentItem.processing_status);
+      var typeKey = getDocumentTypeKey(documentItem);
+
+      if (analysisItem && analysisItem.status === "completed") {
+        if (hasCritical) {
+          return {
+            dotClass: "activity-dot--danger",
+            html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> com riscos criticos",
+            timeLabel: formatRelativeDate(analysisItem.updated_at || documentItem.updated_at || documentItem.created_at),
+            searchText: (documentItem.original_name || "") + " riscos criticos",
+            statusKey: "completed",
+            typeKey: typeKey,
+            severityKey: "critical"
+          };
+        }
+
+        if (hasAttention) {
+          return {
+            dotClass: "activity-dot--warn",
+            html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> requer atencao",
+            timeLabel: formatRelativeDate(analysisItem.updated_at || documentItem.updated_at || documentItem.created_at),
+            searchText: (documentItem.original_name || "") + " requer atencao",
+            statusKey: "completed",
+            typeKey: typeKey,
+            severityKey: "attention"
+          };
+        }
+
+        return {
+          dotClass: "activity-dot--safe",
+          html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> analisado sem riscos criticos",
+          timeLabel: formatRelativeDate(analysisItem.updated_at || documentItem.updated_at || documentItem.created_at),
+          searchText: (documentItem.original_name || "") + " analisado seguro",
+          statusKey: "completed",
+          typeKey: typeKey,
+          severityKey: "safe"
+        };
+      }
+
+      if (status === "analyzing" || status === "uploaded") {
+        return {
+          dotClass: "activity-dot--default",
+          html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> enviado para analise",
+          timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at),
+          searchText: (documentItem.original_name || "") + " enviado para analise",
+          statusKey: status,
+          typeKey: typeKey,
+          severityKey: "unknown"
+        };
+      }
+
+      if (status === "failed") {
+        return {
+          dotClass: "activity-dot--warn",
+          html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> precisa de revisao",
+          timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at),
+          searchText: (documentItem.original_name || "") + " precisa de revisao",
+          statusKey: "failed",
+          typeKey: typeKey,
+          severityKey: "unknown"
+        };
+      }
+
+      return {
+        dotClass: "activity-dot--default",
+        html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> disponivel no painel",
+        timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at),
+        searchText: (documentItem.original_name || "") + " disponivel no painel",
+        statusKey: status || "uploaded",
+        typeKey: typeKey,
+        severityKey: "unknown"
+      };
+    });
+  }
+
   function applySearchFilter() {
-    var filteredDocuments = filterDocumentsBySearch(currentDocuments);
+    var filteredDocuments = filterDocuments(currentDocuments);
     var activeDocument = findDocumentById(currentDocumentId);
     var hasActiveInFilter = activeDocument && filteredDocuments.some(function (item) {
       return item.id === activeDocument.id;
@@ -1075,7 +1289,7 @@
       var activityItems;
 
       renderOverviewKpis(overviewData.kpis || {}, riskData.distribution || {});
-      activityItems = await buildOverviewActivity(recentDocuments);
+      activityItems = await buildOverviewActivityFiltered(recentDocuments);
       overviewActivityItems = activityItems;
       renderOverviewActivity(filterOverviewActivityItems(activityItems));
     } catch (error) {
@@ -1740,6 +1954,8 @@
     try {
       var data = await requestJson("/api/documents", { method: "GET" });
       syncDocumentViews(data.documents || []);
+      await hydrateDocumentSeverityCache(currentDocuments);
+      applySearchFilter();
       await loadOverviewData();
 
       if (!currentDocuments.length) {
@@ -2067,8 +2283,21 @@ function readFilePayload(file) {
       overviewActivityCache = {};
       overviewActivityItems = [];
       currentSearchQuery = "";
+      currentStatusFilter = "all";
+      currentTypeFilter = "all";
+      currentSeverityFilter = "all";
+      documentSeverityCache = {};
       if (dashboardSearchInput) {
         dashboardSearchInput.value = "";
+      }
+      if (dashboardFilterStatus) {
+        dashboardFilterStatus.value = "all";
+      }
+      if (dashboardFilterType) {
+        dashboardFilterType.value = "all";
+      }
+      if (dashboardFilterSeverity) {
+        dashboardFilterSeverity.value = "all";
       }
       setCurrentUser(data.user || null);
       showApp();
@@ -2093,11 +2322,24 @@ function readFilePayload(file) {
     currentDocuments = [];
     currentDocumentId = "";
     currentSearchQuery = "";
+    currentStatusFilter = "all";
+    currentTypeFilter = "all";
+    currentSeverityFilter = "all";
+    documentSeverityCache = {};
     settingsLoaded = false;
     setSettingsFeedback("", "");
     setCurrentUser(null);
     if (dashboardSearchInput) {
       dashboardSearchInput.value = "";
+    }
+    if (dashboardFilterStatus) {
+      dashboardFilterStatus.value = "all";
+    }
+    if (dashboardFilterType) {
+      dashboardFilterType.value = "all";
+    }
+    if (dashboardFilterSeverity) {
+      dashboardFilterSeverity.value = "all";
     }
     syncDocumentViews([]);
     renderOverviewKpis({}, { critical: 0, attention: 0, safe: 0 });
@@ -2113,8 +2355,21 @@ function readFilePayload(file) {
       overviewActivityCache = {};
       overviewActivityItems = [];
       currentSearchQuery = "";
+      currentStatusFilter = "all";
+      currentTypeFilter = "all";
+      currentSeverityFilter = "all";
+      documentSeverityCache = {};
       if (dashboardSearchInput) {
         dashboardSearchInput.value = "";
+      }
+      if (dashboardFilterStatus) {
+        dashboardFilterStatus.value = "all";
+      }
+      if (dashboardFilterType) {
+        dashboardFilterType.value = "all";
+      }
+      if (dashboardFilterSeverity) {
+        dashboardFilterSeverity.value = "all";
       }
       setCurrentUser(data.user || null);
       showApp();
@@ -2284,6 +2539,27 @@ function readFilePayload(file) {
     if (dashboardSearchInput) {
       dashboardSearchInput.addEventListener("input", function () {
         updateSearchQuery(dashboardSearchInput.value);
+      });
+    }
+
+    if (dashboardFilterStatus) {
+      dashboardFilterStatus.addEventListener("change", function () {
+        currentStatusFilter = dashboardFilterStatus.value || "all";
+        updateSearchQuery(currentSearchQuery);
+      });
+    }
+
+    if (dashboardFilterType) {
+      dashboardFilterType.addEventListener("change", function () {
+        currentTypeFilter = dashboardFilterType.value || "all";
+        updateSearchQuery(currentSearchQuery);
+      });
+    }
+
+    if (dashboardFilterSeverity) {
+      dashboardFilterSeverity.addEventListener("change", function () {
+        currentSeverityFilter = dashboardFilterSeverity.value || "all";
+        updateSearchQuery(currentSearchQuery);
       });
     }
   }

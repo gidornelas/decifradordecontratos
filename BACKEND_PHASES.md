@@ -187,6 +187,7 @@ Status:
 - [x] overview e atividade recente conectados aos dados reais do dashboard
 - [x] busca do dashboard aplicada sobre documentos e estados vazios reais
 - [x] filtros do dashboard por status, tipo e severidade
+- [x] responsividade mobile refinada para topo, filtros e grids principais
 
 ## Fase 7 - Producao
 

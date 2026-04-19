@@ -216,6 +216,16 @@ input,select,textarea{font-family:inherit}
 .quick-card:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
 .quick-card svg{width:18px;height:18px}
 .section-subtitle{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--neutral);margin-bottom:12px}
+.comparison-list{display:flex;flex-direction:column;gap:10px}
+.comparison-item{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--neutral-5)}
+.comparison-item:last-child{border-bottom:none;padding-bottom:0}
+.comparison-title{font-size:13.5px;font-weight:600;color:var(--text)}
+.comparison-meta{font-size:12.5px;color:var(--neutral);margin-top:3px;line-height:1.5}
+.comparison-pill{display:inline-flex;align-items:center;justify-content:center;padding:5px 10px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.comparison-pill--critical{background:var(--danger-lt);color:var(--danger);border:1px solid var(--danger-bd)}
+.comparison-pill--attention{background:var(--warn-lt);color:#b45309;border:1px solid var(--warn-bd)}
+.comparison-pill--safe{background:var(--safe-lt);color:#15803d;border:1px solid var(--safe-bd)}
+.comparison-pill--neutral{background:var(--neutral-6);color:var(--text-2);border:1px solid var(--neutral-4)}
 
 /* â”€â”€ UPLOAD ZONE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .upload-zone{border:2px dashed var(--neutral-3);border-radius:var(--r-lg);padding:48px 24px;text-align:center;transition:all .2s;cursor:pointer;background:var(--white)}

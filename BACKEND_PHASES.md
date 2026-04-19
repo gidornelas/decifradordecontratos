@@ -192,6 +192,7 @@ Status:
 - [x] exportacao e compartilhamento com feedback no fluxo de resultados
 - [x] protecao de sessao expirada no frontend e onboarding inicial com CTAs
 - [x] onboarding contextual apos upload inicial e atividade recente mais acionavel
+- [x] comparativo no overview por tipo de contrato e faixas de score
 
 ## Fase 7 - Producao
 

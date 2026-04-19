@@ -125,10 +125,10 @@ Responsabilidades:
 1. Adicionar uma validacao operacional simples para o job de retencao
 2. Consolidar monitoramento de erro e execucao em producao
 3. Melhorar estados de carregamento e resiliencia das acoes do dashboard
-4. Refinar o dashboard com mais contexto por tipo de contrato e score
-5. Revisar refinamentos finais de UX no dashboard com foco em atividade recente e comparacao entre documentos
+4. Refinar o dashboard com comparacao entre documentos e historico de evolucao
+5. Revisar refinamentos finais de UX com foco em activity feed e contexto por perfil de uso
 
 ## Riscos Abertos
 
 - a UX final do dashboard ainda precisa refletir todos os dados reais das APIs
-- o dashboard ainda pode evoluir com contexto comparativo entre documentos e agrupamento por tipo de contrato
+- o dashboard ainda pode evoluir com historico comparativo ao longo do tempo e agrupamentos por perfil de uso

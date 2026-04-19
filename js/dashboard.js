@@ -40,6 +40,8 @@
   var overviewAttentionCount = document.getElementById("overview-attention-count");
   var overviewSafeCount = document.getElementById("overview-safe-count");
   var overviewActivityList = document.getElementById("overview-activity-list");
+  var overviewTypeInsights = document.getElementById("overview-type-insights");
+  var overviewScoreBands = document.getElementById("overview-score-bands");
   var documentsTable = document.getElementById("documents-table");
   var uploadZone = document.getElementById("upload-zone");
   var fileInput = document.getElementById("file-input");
@@ -88,6 +90,7 @@
   var mobileNavBreakpoint = window.matchMedia("(max-width: 980px)");
   var resultsFeedbackTimer = null;
   var sessionHandlingInFlight = false;
+  var overviewComparisonToken = 0;
   var pageTitles = {
     overview: "Visão geral",
     documents: "Documentos",
@@ -1169,6 +1172,50 @@
       "</button>";
   }
 
+  function normalizeComparisonTypeLabel(label) {
+    var normalized = String(label || "").trim();
+    return normalized || "Contrato sem tipo definido";
+  }
+
+  function getScoreBand(score) {
+    var numeric = Number(score);
+
+    if (!Number.isFinite(numeric)) {
+      return { key: "pending", label: "Sem score", pillClass: "comparison-pill--neutral" };
+    }
+
+    if (numeric >= 70) {
+      return { key: "high", label: "Score alto", pillClass: "comparison-pill--critical" };
+    }
+
+    if (numeric >= 40) {
+      return { key: "medium", label: "Score moderado", pillClass: "comparison-pill--attention" };
+    }
+
+    return { key: "low", label: "Score baixo", pillClass: "comparison-pill--safe" };
+  }
+
+  function getComparisonToneFromAverage(score) {
+    var band = getScoreBand(score);
+
+    if (band.key === "high") return { label: "Mais sensivel", pillClass: band.pillClass };
+    if (band.key === "medium") return { label: "Pede revisao", pillClass: band.pillClass };
+    if (band.key === "low") return { label: "Melhor equilibrio", pillClass: band.pillClass };
+    return { label: "Sem leitura", pillClass: band.pillClass };
+  }
+
+  function createComparisonItemMarkup(title, meta, pillLabel, pillClass) {
+    return [
+      '<div class="comparison-item">',
+      "<div>",
+      '<div class="comparison-title">' + escapeHtml(title) + "</div>",
+      '<div class="comparison-meta">' + escapeHtml(meta) + "</div>",
+      "</div>",
+      '<span class="comparison-pill ' + escapeHtml(pillClass || "comparison-pill--neutral") + '">' + escapeHtml(pillLabel) + "</span>",
+      "</div>"
+    ].join("");
+  }
+
   function buildOverviewActivityFallback(documents) {
     var summary = countDocumentsByStatus(documents);
 
@@ -1228,6 +1275,137 @@
         actionMarkup: buildActivityAction("Abrir", "documents", documentItem.id, "documents")
       };
     });
+  }
+
+  async function buildOverviewComparisons(documents) {
+    var sourceDocuments = Array.isArray(documents) ? documents : [];
+    var typeMap = {};
+    var scoreBands = {
+      high: 0,
+      medium: 0,
+      low: 0,
+      pending: 0
+    };
+
+    if (!sourceDocuments.length) {
+      return {
+        types: [],
+        scoreBands: scoreBands
+      };
+    }
+
+    await Promise.all(
+      sourceDocuments.map(async function (documentItem) {
+        var payload = await getAnalysisForOverview(documentItem.id);
+        var analysis = payload && payload.analysis ? payload.analysis : null;
+        var typeLabel = normalizeComparisonTypeLabel(
+          analysis && analysis.contract_type ? analysis.contract_type : getDocumentTypeLabel(documentItem)
+        );
+        var numericScore = analysis && Number.isFinite(Number(analysis.risk_score))
+          ? Number(analysis.risk_score)
+          : null;
+        var band = getScoreBand(numericScore);
+
+        if (!typeMap[typeLabel]) {
+          typeMap[typeLabel] = {
+            label: typeLabel,
+            count: 0,
+            scoreTotal: 0,
+            scoredCount: 0
+          };
+        }
+
+        typeMap[typeLabel].count += 1;
+
+        if (numericScore !== null) {
+          typeMap[typeLabel].scoreTotal += numericScore;
+          typeMap[typeLabel].scoredCount += 1;
+        }
+
+        scoreBands[band.key] += 1;
+      })
+    );
+
+    return {
+      types: Object.keys(typeMap)
+        .map(function (key) {
+          var item = typeMap[key];
+          var averageScore = item.scoredCount
+            ? Math.round(item.scoreTotal / item.scoredCount)
+            : null;
+          var tone = getComparisonToneFromAverage(averageScore);
+
+          return {
+            label: item.label,
+            count: item.count,
+            averageScore: averageScore,
+            toneLabel: tone.label,
+            toneClass: tone.pillClass
+          };
+        })
+        .sort(function (left, right) {
+          if (right.count !== left.count) {
+            return right.count - left.count;
+          }
+
+          return (right.averageScore || -1) - (left.averageScore || -1);
+        })
+        .slice(0, 4),
+      scoreBands: scoreBands
+    };
+  }
+
+  function renderOverviewComparisons(comparisons) {
+    if (!overviewTypeInsights || !overviewScoreBands) {
+      return;
+    }
+
+    var typeItems = comparisons && Array.isArray(comparisons.types) ? comparisons.types : [];
+    var bands = comparisons && comparisons.scoreBands ? comparisons.scoreBands : null;
+
+    if (!typeItems.length) {
+      overviewTypeInsights.innerHTML = '<div class="table-empty">Envie contratos com analise concluida para comparar tipos.</div>';
+    } else {
+      overviewTypeInsights.innerHTML = typeItems
+        .map(function (item) {
+          var meta = item.count + " documento" + (item.count > 1 ? "s" : "") +
+            (item.averageScore !== null ? " · media " + item.averageScore + "/100" : " · ainda sem score consolidado");
+          return createComparisonItemMarkup(item.label, meta, item.toneLabel, item.toneClass);
+        })
+        .join("");
+    }
+
+    if (!bands) {
+      overviewScoreBands.innerHTML = '<div class="table-empty">Sem comparativo de score disponivel.</div>';
+      return;
+    }
+
+    overviewScoreBands.innerHTML = [
+      createComparisonItemMarkup("Score alto", bands.high + " contrato" + (bands.high !== 1 ? "s" : "") + " acima de 70", "Revisar primeiro", "comparison-pill--critical"),
+      createComparisonItemMarkup("Score moderado", bands.medium + " contrato" + (bands.medium !== 1 ? "s" : "") + " entre 40 e 69", "Acompanhar", "comparison-pill--attention"),
+      createComparisonItemMarkup("Score baixo", bands.low + " contrato" + (bands.low !== 1 ? "s" : "") + " abaixo de 40", "Mais estaveis", "comparison-pill--safe"),
+      createComparisonItemMarkup("Sem score", bands.pending + " documento" + (bands.pending !== 1 ? "s" : "") + " aguardando analise", "Em preparo", "comparison-pill--neutral")
+    ].join("");
+  }
+
+  function refreshOverviewComparisons(documents) {
+    var token = ++overviewComparisonToken;
+
+    buildOverviewComparisons(documents)
+      .then(function (comparisons) {
+        if (token !== overviewComparisonToken) {
+          return;
+        }
+
+        renderOverviewComparisons(comparisons);
+      })
+      .catch(function () {
+        if (token !== overviewComparisonToken) {
+          return;
+        }
+
+        renderOverviewComparisons(null);
+      });
   }
 
   async function getAnalysisForOverview(documentId) {
@@ -1566,6 +1744,7 @@
     renderSelectOptions(guidedDocSelect, filteredDocuments);
     renderSelectOptions(resultsDocSelect, filteredDocuments);
     renderOverviewActivity(filterOverviewActivityItems(overviewActivityItems));
+    refreshOverviewComparisons(filteredDocuments);
 
     setActiveDocument(hasActiveInFilter ? currentDocumentId : (filteredDocuments.length ? filteredDocuments[0].id : ""));
   }
@@ -1587,10 +1766,12 @@
       activityItems = await buildOverviewActivityFiltered(recentDocuments);
       overviewActivityItems = activityItems;
       renderOverviewActivity(filterOverviewActivityItems(activityItems));
+      refreshOverviewComparisons(filterDocuments(currentDocuments));
     } catch (error) {
       renderOverviewKpis({}, { critical: 0, attention: 0, safe: 0 });
       overviewActivityItems = buildOverviewActivityFallback(currentDocuments);
       renderOverviewActivity(filterOverviewActivityItems(overviewActivityItems));
+      refreshOverviewComparisons(filterDocuments(currentDocuments));
     }
   }
 

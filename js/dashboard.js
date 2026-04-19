@@ -15,6 +15,9 @@
   var loginPasswordInput = document.getElementById("login-password");
   var loginRememberInput = document.getElementById("login-remember");
   var logoutButton = document.getElementById("logout-btn");
+  var appSidebar = document.getElementById("app-sidebar");
+  var sidebarBackdrop = document.getElementById("sidebar-backdrop");
+  var mobileNavToggle = document.getElementById("mobile-nav-toggle");
   var topbarTitle = document.getElementById("topbar-title");
   var dashboardSearchInput = document.getElementById("dashboard-search");
   var dashboardFilterStatus = document.getElementById("dashboard-filter-status");
@@ -79,6 +82,7 @@
   var currentRiskFilter = "all";
   var currentGuidedTab = "resumo";
   var settingsLoaded = false;
+  var mobileNavBreakpoint = window.matchMedia("(max-width: 980px)");
   var pageTitles = {
     overview: "Visão geral",
     documents: "Documentos",
@@ -257,6 +261,33 @@
     populateSettingsFields(currentUser);
   }
 
+  function isMobileNavigation() {
+    return mobileNavBreakpoint.matches;
+  }
+
+  function setMobileNavOpen(isOpen) {
+    if (!mobileNavToggle && !sidebarBackdrop) {
+      return;
+    }
+
+    var shouldOpen = Boolean(isOpen) && isMobileNavigation();
+
+    document.body.classList.toggle("mobile-nav-open", shouldOpen);
+
+    if (mobileNavToggle) {
+      mobileNavToggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+      mobileNavToggle.setAttribute("aria-label", shouldOpen ? "Fechar menu" : "Abrir menu");
+    }
+
+    if (appSidebar) {
+      appSidebar.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+    }
+  }
+
+  function closeMobileNav() {
+    setMobileNavOpen(false);
+  }
+
   function switchPage(pageName) {
     pages.forEach(function (page) {
       page.classList.remove("active");
@@ -283,6 +314,8 @@
     if (pageName === "settings") {
       loadSettingsProfile(false);
     }
+
+    closeMobileNav();
   }
 
   function getVisiblePageName() {
@@ -2382,6 +2415,10 @@ function readFilePayload(file) {
   }
 
   function bindNavigation() {
+    if (appSidebar && isMobileNavigation()) {
+      appSidebar.setAttribute("aria-hidden", "true");
+    }
+
     navItems.forEach(function (item) {
       item.addEventListener("click", function () {
         switchPage(item.getAttribute("data-page"));
@@ -2393,6 +2430,34 @@ function readFilePayload(file) {
         switchPage(button.getAttribute("data-nav"));
       });
     });
+
+    if (mobileNavToggle) {
+      mobileNavToggle.addEventListener("click", function () {
+        var isOpen = document.body.classList.contains("mobile-nav-open");
+        setMobileNavOpen(!isOpen);
+      });
+    }
+
+    if (sidebarBackdrop) {
+      sidebarBackdrop.addEventListener("click", closeMobileNav);
+    }
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        closeMobileNav();
+      }
+    });
+
+    if (mobileNavBreakpoint && typeof mobileNavBreakpoint.addEventListener === "function") {
+      mobileNavBreakpoint.addEventListener("change", function (event) {
+        if (!event.matches) {
+          closeMobileNav();
+          if (appSidebar) {
+            appSidebar.removeAttribute("aria-hidden");
+          }
+        }
+      });
+    }
   }
 
   function bindDocumentTables() {

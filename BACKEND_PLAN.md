@@ -9,10 +9,10 @@ O projeto saiu do estado frontend-only e ja possui backend operacional em produc
 - upload de documentos
 - storage privado via Cloudflare R2
 - analise server-side com Claude
-- dashboard alimentado por APIs base e seções de results/risks ligadas à análise real
+- dashboard alimentado por APIs base, secoes reais e navegacao mobile refinada
 - healthcheck operacional
 
-Ainda faltam refinamentos para fechar o ciclo de producao, principalmente em operabilidade, revisao de seguranca e renderizacao final do dashboard.
+Ainda faltam refinamentos para fechar o ciclo de producao, principalmente em operabilidade, revisao de seguranca e UX final de exportacao e compartilhamento.
 
 ## Arquitetura Atual
 
@@ -108,6 +108,8 @@ Responsabilidades:
 - overview
 - documentos recentes
 - distribuicao de risco
+- resultados, riscos e leitura guiada reais
+- busca, filtros e navegacao mobile
 
 ### Operabilidade
 
@@ -124,9 +126,9 @@ Responsabilidades:
 2. Consolidar monitoramento de erro e execucao em producao
 3. Revisar UX de exportacao e compartilhamento dos resultados
 4. Fechar protecoes adicionais de rotas no frontend
-5. Melhorar navegacao mobile da sidebar e dos atalhos do dashboard
+5. Fechar estados de exportacao e compartilhamento com feedback claro para o usuario
 
 ## Riscos Abertos
 
 - a UX final do dashboard ainda precisa refletir todos os dados reais das APIs
-- a navegacao mobile ainda pode evoluir com uma sidebar mais dedicada e atalhos mais compactos
+- exportacao e compartilhamento ainda precisam sair do estado basico

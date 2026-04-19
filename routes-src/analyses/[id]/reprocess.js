@@ -34,6 +34,10 @@ module.exports = async function handler(req, res) {
       return http.badRequest(res, error.message);
     }
 
+    if (error && error.message === "Analysis already in progress for this document.") {
+      return http.conflict(res, error.message);
+    }
+
     return http.internalError(res, error);
   }
 };

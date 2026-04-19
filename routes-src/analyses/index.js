@@ -100,6 +100,14 @@ module.exports = async function handler(req, res) {
       return http.badRequest(res, error.message);
     }
 
+    if (error && error.message === "Analysis already in progress for this document.") {
+      observability.logRequestComplete(req, res, {
+        route: "analyses.create",
+        statusCode: 409
+      });
+      return http.conflict(res, error.message);
+    }
+
     observability.logRequestComplete(req, res, {
       route: "analyses.create",
       statusCode: 500

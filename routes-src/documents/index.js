@@ -7,6 +7,9 @@ var storage = require("../../lib/storage");
 var rateLimit = require("../../lib/rate-limit");
 var observability = require("../../lib/observability");
 
+var MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024;
+var MAX_ORIGINAL_NAME_LENGTH = 180;
+
 module.exports = async function handler(req, res) {
   if (req.method === "GET") {
     return listDocuments(req, res);
@@ -87,6 +90,11 @@ async function createDocument(req, res) {
     var base64Content =
       typeof body.base64Content === "string" ? body.base64Content.trim() : "";
     var sizeBytes = normalizeSize(body.sizeBytes);
+    var actualPayloadSize = getActualPayloadSize({
+      extension: extension,
+      textContent: textContent,
+      base64Content: base64Content
+    });
 
     if (!originalName) {
       observability.logRequestComplete(req, res, {
@@ -95,6 +103,15 @@ async function createDocument(req, res) {
         statusCode: 400
       });
       return http.badRequest(res, "Document name is required.");
+    }
+
+    if (originalName.length > MAX_ORIGINAL_NAME_LENGTH) {
+      observability.logRequestComplete(req, res, {
+        route: "documents.create",
+        userId: authContext.session.user_id,
+        statusCode: 400
+      });
+      return http.badRequest(res, "Document name is too long.");
     }
 
     if (!isAllowedExtension(extension)) {
@@ -109,6 +126,18 @@ async function createDocument(req, res) {
       );
     }
 
+    if (!actualPayloadSize) {
+      observability.logRequestComplete(req, res, {
+        route: "documents.create",
+        userId: authContext.session.user_id,
+        statusCode: 400
+      });
+      return http.badRequest(
+        res,
+        "Document content is required for this file type."
+      );
+    }
+
     if (sizeBytes <= 0) {
       observability.logRequestComplete(req, res, {
         route: "documents.create",
@@ -118,7 +147,7 @@ async function createDocument(req, res) {
       return http.badRequest(res, "Document size must be greater than zero.");
     }
 
-    if (sizeBytes > 10 * 1024 * 1024) {
+    if (sizeBytes > MAX_DOCUMENT_SIZE_BYTES) {
       observability.logRequestComplete(req, res, {
         route: "documents.create",
         userId: authContext.session.user_id,
@@ -127,11 +156,30 @@ async function createDocument(req, res) {
       return http.badRequest(res, "Document size exceeds the 10 MB limit.");
     }
 
+    if (actualPayloadSize > MAX_DOCUMENT_SIZE_BYTES) {
+      observability.logRequestComplete(req, res, {
+        route: "documents.create",
+        userId: authContext.session.user_id,
+        statusCode: 400
+      });
+      return http.badRequest(res, "Document size exceeds the 10 MB limit.");
+    }
+
+    if (sizeBytes !== actualPayloadSize) {
+      observability.logRequestComplete(req, res, {
+        route: "documents.create",
+        userId: authContext.session.user_id,
+        statusCode: 400
+      });
+      return http.badRequest(res, "Document size does not match the uploaded content.");
+    }
+
     var extractedPayload = await extraction.extractDocumentPayload({
       extension: extension,
       mimeType: mimeType,
       textContent: textContent,
-      base64Content: base64Content
+      base64Content: base64Content,
+      maxBinaryBytes: MAX_DOCUMENT_SIZE_BYTES
     });
     var extractedText = extractedPayload.extractedText || null;
     var processingStatus =
@@ -168,7 +216,8 @@ async function createDocument(req, res) {
           originalName: originalName,
           extension: extension,
           mimeType: mimeType || guessMimeType(extension),
-          base64Content: base64Content
+          base64Content: base64Content,
+          maxBytes: MAX_DOCUMENT_SIZE_BYTES
         });
 
         var updatedDocument = await db.query(
@@ -277,4 +326,20 @@ function guessMimeType(extension) {
   }
 
   return "application/octet-stream";
+}
+
+function getActualPayloadSize(input) {
+  var extension = String(input && input.extension || "").toLowerCase();
+  var textContent = typeof input.textContent === "string" ? input.textContent : "";
+  var base64Content = typeof input.base64Content === "string" ? input.base64Content : "";
+
+  if (extension === "txt" && textContent) {
+    return Buffer.byteLength(textContent, "utf8");
+  }
+
+  if (base64Content) {
+    return extraction.estimateBase64DecodedSize(base64Content);
+  }
+
+  return 0;
 }

@@ -190,6 +190,7 @@ Status:
 - [x] responsividade mobile refinada para topo, filtros e grids principais
 - [x] navegacao mobile da sidebar com drawer e atalhos rapidos persistentes
 - [x] exportacao e compartilhamento com feedback no fluxo de resultados
+- [x] protecao de sessao expirada no frontend e onboarding inicial com CTAs
 
 ## Fase 7 - Producao
 

@@ -12,7 +12,7 @@ O projeto saiu do estado frontend-only e ja possui backend operacional em produc
 - dashboard alimentado por APIs base, secoes reais e navegacao mobile refinada
 - healthcheck operacional
 
-Ainda faltam refinamentos para fechar o ciclo de producao, principalmente em operabilidade, revisao de seguranca e protecoes adicionais no frontend.
+Ainda faltam refinamentos para fechar o ciclo de producao, principalmente em operabilidade, revisao de seguranca e refinamentos finais de UX no dashboard.
 
 ## Arquitetura Atual
 
@@ -125,10 +125,10 @@ Responsabilidades:
 1. Adicionar uma validacao operacional simples para o job de retencao
 2. Consolidar monitoramento de erro e execucao em producao
 3. Melhorar estados de carregamento e resiliencia das acoes do dashboard
-4. Fechar protecoes adicionais de rotas no frontend
-5. Revisar refinamentos finais de UX no dashboard com foco em onboarding e empty states
+4. Refinar onboarding contextual apos o primeiro upload e primeira analise
+5. Revisar refinamentos finais de UX no dashboard com foco em empty states e atividade recente
 
 ## Riscos Abertos
 
 - a UX final do dashboard ainda precisa refletir todos os dados reais das APIs
-- algumas protecoes de rota e refinamentos de onboarding ainda dependem do frontend
+- activity feed e onboarding ainda podem ganhar mais contexto apos os primeiros documentos reais

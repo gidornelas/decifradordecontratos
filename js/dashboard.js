@@ -87,6 +87,7 @@
   var settingsLoaded = false;
   var mobileNavBreakpoint = window.matchMedia("(max-width: 980px)");
   var resultsFeedbackTimer = null;
+  var sessionHandlingInFlight = false;
   var pageTitles = {
     overview: "Visão geral",
     documents: "Documentos",
@@ -114,6 +115,18 @@
       payload = await response.json();
     } catch (error) {
       payload = null;
+    }
+
+    if (
+      response.status === 401 &&
+      !/^\/api\/auth\/(login|register|logout)$/.test(String(url || "")) &&
+      typeof handleSessionExpired === "function"
+    ) {
+      handleSessionExpired(
+        payload && payload.message
+          ? payload.message
+          : "Sua sessao expirou. Entre novamente para continuar."
+      );
     }
 
     return {
@@ -230,6 +243,56 @@
     if (app) {
       app.style.display = "none";
     }
+  }
+
+  function resetClientState() {
+    analysisCache = {};
+    overviewActivityCache = {};
+    currentDocuments = [];
+    currentDocumentId = "";
+    currentSearchQuery = "";
+    currentStatusFilter = "all";
+    currentTypeFilter = "all";
+    currentSeverityFilter = "all";
+    documentSeverityCache = {};
+    settingsLoaded = false;
+    setSettingsFeedback("", "");
+    setResultsFeedback("", "");
+    setCurrentUser(null);
+
+    if (dashboardSearchInput) {
+      dashboardSearchInput.value = "";
+    }
+    if (dashboardFilterStatus) {
+      dashboardFilterStatus.value = "all";
+    }
+    if (dashboardFilterType) {
+      dashboardFilterType.value = "all";
+    }
+    if (dashboardFilterSeverity) {
+      dashboardFilterSeverity.value = "all";
+    }
+
+    syncDocumentViews([]);
+    renderOverviewKpis({}, { critical: 0, attention: 0, safe: 0 });
+    renderOverviewActivity(buildOverviewActivityFallback([]));
+    resetUploadUi();
+  }
+
+  function handleSessionExpired(message) {
+    if (sessionHandlingInFlight || !app || app.style.display === "none") {
+      return;
+    }
+
+    sessionHandlingInFlight = true;
+    resetClientState();
+    setAuthMode("login");
+    showLogin();
+    showLoginError(message || "Sua sessao expirou. Entre novamente para continuar.");
+
+    window.setTimeout(function () {
+      sessionHandlingInFlight = false;
+    }, 300);
   }
 
   function getInitials(name, email) {
@@ -907,12 +970,31 @@
     ].join("");
   }
 
+  function getDocumentOnboardingMarkup() {
+    return [
+      '<div class="empty-state">',
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>',
+      '<div class="empty-state-title">Envie seu primeiro contrato</div>',
+      '<div class="empty-state-text">Suba um PDF, DOCX ou TXT para desbloquear riscos, leitura guiada e resultados completos no painel.</div>',
+      '<div class="empty-state-actions">',
+      '<button class="btn btn-primary" type="button" data-nav="analyze">Analisar contrato</button>',
+      '<button class="btn btn-outline" type="button" data-nav="settings">Ver configuracoes</button>',
+      "</div>",
+      "</div>"
+    ].join("");
+  }
+
   function renderTable(tableElement, documents, limit) {
     if (!tableElement) return;
 
     var rows = documents;
     if (typeof limit === "number") {
       rows = documents.slice(0, limit);
+    }
+
+    if (!rows.length && !getSearchQuery() && currentStatusFilter === "all" && currentTypeFilter === "all" && currentSeverityFilter === "all") {
+      tableElement.innerHTML = getDocumentOnboardingMarkup();
+      return;
     }
 
     var head = '<div class="table-head"><span>Documento</span><span>Tipo</span><span>Data</span><span>Status</span><span></span></div>';
@@ -1622,6 +1704,7 @@
     var scoreRing = analysisResult ? analysisResult.querySelector(".ring") : null;
     var scoreValue = analysisResult ? analysisResult.querySelector(".ring-val") : null;
     var scoreMax = analysisResult ? analysisResult.querySelector(".ring-max") : null;
+    var isFirstUse = !currentDocuments.length && !getSearchQuery();
 
     if (uploadZone) uploadZone.style.display = "";
     if (analysisResult) {
@@ -1636,7 +1719,9 @@
       breakdownEl.innerHTML = '<div style="flex:1;background:var(--neutral-4)"></div>';
     }
     if (risksEl) {
-      risksEl.innerHTML = '<div class="table-empty">' + escapeHtml(message) + "</div>";
+      risksEl.innerHTML = isFirstUse
+        ? getDocumentOnboardingMarkup()
+        : '<div class="table-empty">' + escapeHtml(message) + "</div>";
     }
     renderRisksEmpty(message);
     renderGuidedEmpty(message);
@@ -1686,7 +1771,9 @@
       '<button class="risk-filter" data-filter="attention">Atenção</button>',
       '<button class="risk-filter" data-filter="safe">Seguros</button>',
       "</div>",
-      '<div class="card"><div class="table-empty">' + escapeHtml(message) + "</div></div>"
+      !currentDocuments.length && !getSearchQuery()
+        ? getDocumentOnboardingMarkup()
+        : '<div class="card"><div class="table-empty">' + escapeHtml(message) + "</div></div>"
     ].join("");
 
     riskFilters = Array.prototype.slice.call(document.querySelectorAll(".risk-filter"));
@@ -1775,7 +1862,9 @@
     }
 
     if (clausesRoot) {
-      clausesRoot.innerHTML = '<div class="card"><div class="table-empty">' + escapeHtml(message) + "</div></div>";
+      clausesRoot.innerHTML = !currentDocuments.length && !getSearchQuery()
+        ? getDocumentOnboardingMarkup()
+        : '<div class="card"><div class="table-empty">' + escapeHtml(message) + "</div></div>";
     }
 
     renderChecklist([
@@ -1900,7 +1989,9 @@
     }
 
     if (deadlinesRoot) {
-      deadlinesRoot.innerHTML = '<div class="table-empty">' + escapeHtml(message) + "</div>";
+      deadlinesRoot.innerHTML = !currentDocuments.length && !getSearchQuery()
+        ? getDocumentOnboardingMarkup()
+        : '<div class="table-empty">' + escapeHtml(message) + "</div>";
     }
 
     if (verdictTitle) verdictTitle.textContent = "Análise indisponível";
@@ -2530,34 +2621,7 @@ function readFilePayload(file) {
       // Ignore logout errors and still reset UI.
     }
 
-    analysisCache = {};
-    overviewActivityCache = {};
-    currentDocuments = [];
-    currentDocumentId = "";
-    currentSearchQuery = "";
-    currentStatusFilter = "all";
-    currentTypeFilter = "all";
-    currentSeverityFilter = "all";
-    documentSeverityCache = {};
-    settingsLoaded = false;
-    setSettingsFeedback("", "");
-    setCurrentUser(null);
-    if (dashboardSearchInput) {
-      dashboardSearchInput.value = "";
-    }
-    if (dashboardFilterStatus) {
-      dashboardFilterStatus.value = "all";
-    }
-    if (dashboardFilterType) {
-      dashboardFilterType.value = "all";
-    }
-    if (dashboardFilterSeverity) {
-      dashboardFilterSeverity.value = "all";
-    }
-    syncDocumentViews([]);
-    renderOverviewKpis({}, { critical: 0, attention: 0, safe: 0 });
-    renderOverviewActivity(buildOverviewActivityFallback([]));
-    resetUploadUi();
+    resetClientState();
     showLogin();
   }
 
@@ -2609,6 +2673,15 @@ function readFilePayload(file) {
       button.addEventListener("click", function () {
         switchPage(button.getAttribute("data-nav"));
       });
+    });
+
+    document.addEventListener("click", function (event) {
+      var trigger = event.target.closest("[data-nav]");
+      if (!trigger || navButtons.indexOf(trigger) !== -1) {
+        return;
+      }
+
+      switchPage(trigger.getAttribute("data-nav"));
     });
 
     if (mobileNavToggle) {

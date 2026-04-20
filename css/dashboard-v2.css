@@ -189,6 +189,8 @@ input,select,textarea{font-family:inherit}
 .table-actions{display:inline-flex;align-items:center;gap:6px;justify-self:end}
 .table-action-btn{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--neutral);border:1px solid var(--neutral-4);background:var(--white);transition:all .15s;margin-left:auto}
 .table-action-btn:hover{border-color:var(--blue);color:var(--blue)}
+.table-action-btn:disabled{opacity:.5;cursor:not-allowed}
+.table-action-btn.is-loading svg{animation:spin 1.1s linear infinite}
 .table-action-btn svg{width:14px;height:14px}
 .table-action-btn--danger:hover{border-color:var(--danger-bd);color:var(--danger)}
 .table-empty{padding:24px 16px;text-align:center;font-size:14px;color:var(--neutral)}

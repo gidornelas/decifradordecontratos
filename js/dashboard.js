@@ -88,6 +88,8 @@
   var currentSeverityFilter = "all";
   var documentSeverityCache = {};
   var selectedDocumentIds = {};
+  var deletingDocumentIds = {};
+  var isBulkDeletingDocuments = false;
   var currentDocumentId = "";
   var currentUser = null;
   var currentRiskFilter = "all";
@@ -266,6 +268,8 @@
     currentSeverityFilter = "all";
     documentSeverityCache = {};
     selectedDocumentIds = {};
+    deletingDocumentIds = {};
+    isBulkDeletingDocuments = false;
     settingsLoaded = false;
     setSettingsFeedback("", "");
     setResultsFeedback("", "");
@@ -462,22 +466,24 @@
     var allVisibleSelected = hasVisibleDocuments && selectedVisibleCount === visibleIds.length;
 
     if (documentsSelectAllBtn) {
-      documentsSelectAllBtn.disabled = !hasVisibleDocuments;
+      documentsSelectAllBtn.disabled = !hasVisibleDocuments || isBulkDeletingDocuments;
       documentsSelectAllBtn.textContent = allVisibleSelected
         ? "Visiveis selecionados"
         : "Selecionar visiveis";
     }
 
     if (documentsClearSelectionBtn) {
-      documentsClearSelectionBtn.disabled = selectedCount === 0;
+      documentsClearSelectionBtn.disabled = selectedCount === 0 || isBulkDeletingDocuments;
       documentsClearSelectionBtn.textContent = selectedCount > 0
         ? "Limpar selecao (" + selectedCount + ")"
         : "Limpar selecao";
     }
 
     if (documentsBulkDeleteBtn) {
-      documentsBulkDeleteBtn.disabled = selectedCount === 0;
-      documentsBulkDeleteBtn.textContent = selectedCount > 0
+      documentsBulkDeleteBtn.disabled = selectedCount === 0 || isBulkDeletingDocuments;
+      documentsBulkDeleteBtn.textContent = isBulkDeletingDocuments
+        ? "Excluindo..."
+        : selectedCount > 0
         ? "Excluir selecionados (" + selectedCount + ")"
         : "Excluir selecionados";
     }
@@ -1060,6 +1066,7 @@
     var status = getStatusMeta(documentItem.processing_status);
     var isSelectable = Boolean(config.selectable);
     var isSelected = Boolean(selectedDocumentIds[documentItem.id]);
+    var isDeleting = Boolean(deletingDocumentIds[documentItem.id]);
     var rowClasses = ["table-row"];
 
     if (isSelected) {
@@ -1079,8 +1086,8 @@
       '<span class="table-date">' + escapeHtml(formatDate(documentItem.created_at)) + "</span>",
       '<span class="badge ' + status.className + '"><span class="badge-dot"></span>' + escapeHtml(status.label) + "</span>",
       '<span class="table-actions">' +
-        '<button class="table-action-btn" type="button" data-action="open" aria-label="Abrir documento"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>' +
-        '<button class="table-action-btn table-action-btn--danger" type="button" data-action="delete" aria-label="Excluir documento"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>' +
+        '<button class="table-action-btn" type="button" data-action="open" aria-label="Abrir documento"' + (isDeleting || isBulkDeletingDocuments ? " disabled" : "") + '><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>' +
+        '<button class="table-action-btn table-action-btn--danger' + (isDeleting ? " is-loading" : "") + '" type="button" data-action="delete" aria-label="' + (isDeleting ? "Excluindo documento" : "Excluir documento") + '"' + (isDeleting || isBulkDeletingDocuments ? " disabled" : "") + '><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>' +
       "</span>",
       "</div>"
     ].join("");
@@ -3091,20 +3098,28 @@ function readFilePayload(file) {
       return null;
     }
 
-    await performDocumentDeletion(documentId);
+    deletingDocumentIds[documentId] = true;
+    applySearchFilter();
 
-    if (config.reload !== false) {
-      await loadDocuments();
+    try {
+      await performDocumentDeletion(documentId);
+
+      if (config.reload !== false) {
+        await loadDocuments();
+      }
+
+      if (config.feedback !== false) {
+        setDocumentsFeedback('"' + documentName + '" foi excluido do painel e do banco.', "success");
+      }
+
+      return {
+        id: documentId,
+        name: documentName
+      };
+    } finally {
+      delete deletingDocumentIds[documentId];
+      applySearchFilter();
     }
-
-    if (config.feedback !== false) {
-      setDocumentsFeedback('"' + documentName + '" foi excluido do painel e do banco.', "success");
-    }
-
-    return {
-      id: documentId,
-      name: documentName
-    };
   }
 
   async function deleteSelectedDocuments() {
@@ -3121,47 +3136,53 @@ function readFilePayload(file) {
       return;
     }
 
-    if (documentsBulkDeleteBtn) {
-      documentsBulkDeleteBtn.disabled = true;
-      documentsBulkDeleteBtn.textContent = "Excluindo...";
-    }
-
+    isBulkDeletingDocuments = true;
+    selectedIds.forEach(function (documentId) {
+      deletingDocumentIds[documentId] = true;
+    });
+    applySearchFilter();
     setDocumentsFeedback("Excluindo documentos selecionados...", "info");
 
-    for (var index = 0; index < selectedIds.length; index += 1) {
-      try {
-        var result = await deleteDocument(selectedIds[index], {
-          confirm: false,
-          reload: false,
-          feedback: false
-        });
-        successCount += 1;
-        if (!firstDeletedName && result && result.name) {
-          firstDeletedName = result.name;
+    try {
+      for (var index = 0; index < selectedIds.length; index += 1) {
+        try {
+          var result = await deleteDocument(selectedIds[index], {
+            confirm: false,
+            reload: false,
+            feedback: false
+          });
+          successCount += 1;
+          if (!firstDeletedName && result && result.name) {
+            firstDeletedName = result.name;
+          }
+        } catch (error) {
+          failures.push(error && error.message ? error.message : "Falha ao excluir um documento.");
         }
-      } catch (error) {
-        failures.push(error && error.message ? error.message : "Falha ao excluir um documento.");
       }
-    }
 
-    await loadDocuments();
+      await loadDocuments();
 
-    if (failures.length) {
+      if (failures.length) {
+        setDocumentsFeedback(
+          successCount > 0
+            ? successCount + " documento" + (successCount > 1 ? "s foram" : " foi") + " excluido" + (successCount > 1 ? "s" : "") + ", mas ainda houve " + failures.length + " falha" + (failures.length > 1 ? "s" : "") + ". " + failures[0]
+            : "Nao foi possivel excluir os documentos selecionados agora. " + failures[0],
+          successCount > 0 ? "info" : "error"
+        );
+        return;
+      }
+
       setDocumentsFeedback(
-        successCount > 0
-          ? successCount + " documento" + (successCount > 1 ? "s foram" : " foi") + " excluido" + (successCount > 1 ? "s" : "") + ", mas ainda houve " + failures.length + " falha" + (failures.length > 1 ? "s" : "") + "."
-          : "Nao foi possivel excluir os documentos selecionados agora.",
-        successCount > 0 ? "info" : "error"
+        successCount === 1 && firstDeletedName
+          ? '"' + firstDeletedName + '" foi excluido do painel e do banco.'
+          : successCount + " documentos foram excluidos do painel e do banco.",
+        "success"
       );
-      return;
+    } finally {
+      isBulkDeletingDocuments = false;
+      deletingDocumentIds = {};
+      applySearchFilter();
     }
-
-    setDocumentsFeedback(
-      successCount === 1 && firstDeletedName
-        ? '"' + firstDeletedName + '" foi excluido do painel e do banco.'
-        : successCount + " documentos foram excluidos do painel e do banco.",
-      "success"
-    );
   }
 
   function applyRiskFilter(filter) {
@@ -3418,6 +3439,11 @@ function readFilePayload(file) {
           return;
         }
 
+        if (isBulkDeletingDocuments) {
+          checkbox.checked = Boolean(selectedDocumentIds[documentId]);
+          return;
+        }
+
         if (checkbox.checked) {
           selectedDocumentIds[documentId] = true;
         } else {
@@ -3441,6 +3467,10 @@ function readFilePayload(file) {
         if (actionButton) {
           event.preventDefault();
           event.stopPropagation();
+
+          if (actionButton.disabled) {
+            return;
+          }
 
           if (actionButton.getAttribute("data-action") === "delete") {
             try {

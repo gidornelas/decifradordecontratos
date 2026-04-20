@@ -196,6 +196,7 @@ Status:
 - [x] tendencia recente de score no overview com leitura temporal das analises
 - [x] exclusao de documentos pelo dashboard ligada ao delete real do backend
 - [x] exclusao em lote e feedback visual de exclusao na tela de documentos
+- [x] estados de carregamento e falha parcial nas acoes de exclusao do dashboard
 
 ## Fase 7 - Producao
 

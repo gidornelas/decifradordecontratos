@@ -126,7 +126,7 @@ Responsabilidades:
 2. Consolidar monitoramento de erro e execucao em producao
 3. Melhorar estados de carregamento e resiliencia das acoes do dashboard
 4. Refinar o dashboard com historico comparativo mais profundo e cortes por periodo
-5. Revisar refinamentos finais de UX com foco em activity feed, perfil de uso e acoes em lote
+5. Revisar refinamentos finais de UX com foco em activity feed, perfil de uso e fluxos de exclusao em lote
 
 ## Riscos Abertos
 

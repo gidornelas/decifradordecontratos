@@ -195,6 +195,7 @@ Status:
 - [x] comparativo no overview por tipo de contrato e faixas de score
 - [x] tendencia recente de score no overview com leitura temporal das analises
 - [x] exclusao de documentos pelo dashboard ligada ao delete real do backend
+- [x] exclusao em lote e feedback visual de exclusao na tela de documentos
 
 ## Fase 7 - Producao
 

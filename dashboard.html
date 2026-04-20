@@ -314,19 +314,32 @@
       <div class="page-head">
         <h2 class="page-title">Meus Documentos</h2>
         <div class="page-actions">
+          <button class="btn btn-outline" id="documents-select-all-btn" type="button">
+            Selecionar visiveis
+          </button>
+          <button class="btn btn-outline" id="documents-clear-selection-btn" type="button" disabled>
+            Limpar selecao
+          </button>
+          <button class="btn btn-outline" id="documents-bulk-delete-btn" type="button" disabled>
+            Excluir selecionados
+          </button>
           <button class="btn btn-primary" data-nav="analyze">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Analisar contrato
           </button>
         </div>
       </div>
-      <div class="table" id="documents-table">
-        <div class="table-head"><span>Documento</span><span>Tipo</span><span>Data</span><span>Status</span><span></span></div>
-        <div class="table-row"><span class="table-doc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>contrato_aluguel.pdf</span><span class="table-type">Aluguel</span><span class="table-date">17 Abr 2026</span><span class="badge badge--critical"><span class="badge-dot"></span>Crítico</span><span><button class="table-action-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span></div>
-        <div class="table-row"><span class="table-doc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>termos_plataforma.pdf</span><span class="table-type">Termos</span><span class="table-date">15 Abr 2026</span><span class="badge badge--attention"><span class="badge-dot"></span>Atenção</span><span><button class="table-action-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span></div>
-        <div class="table-row"><span class="table-doc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>politica_privacidade.pdf</span><span class="table-type">Privacidade</span><span class="table-date">12 Abr 2026</span><span class="badge badge--safe"><span class="badge-dot"></span>Seguro</span><span><button class="table-action-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span></div>
-        <div class="table-row"><span class="table-doc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>contrato_servico.docx</span><span class="table-type">Serviço</span><span class="table-date">10 Abr 2026</span><span class="badge badge--attention"><span class="badge-dot"></span>Atenção</span><span><button class="table-action-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span></div>
-        <div class="table-row"><span class="table-doc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>fatura_telecom.txt</span><span class="table-type">Fatura</span><span class="table-date">—</span><span class="badge badge--processing"><span class="badge-dot"></span>Analisando</span><span><button class="table-action-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span></div>
+      <div class="inline-feedback" id="documents-feedback" hidden></div>
+      <div class="table table--selectable" id="documents-table">
+        <div class="table-head"><span></span><span>Documento</span><span>Tipo</span><span>Data</span><span>Status</span><span></span></div>
+        <div class="table-row">
+          <span class="table-select"><input class="table-checkbox" type="checkbox" aria-label="Selecionar contrato_aluguel.pdf"></span>
+          <span class="table-doc"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>contrato_aluguel.pdf</span>
+          <span class="table-type">Aluguel</span>
+          <span class="table-date">17 Abr 2026</span>
+          <span class="badge badge--critical"><span class="badge-dot"></span>Crítico</span>
+          <span class="table-actions"><button class="table-action-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span>
+        </div>
       </div>
     </div>
 

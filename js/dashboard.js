@@ -43,6 +43,10 @@
   var overviewTypeInsights = document.getElementById("overview-type-insights");
   var overviewScoreBands = document.getElementById("overview-score-bands");
   var overviewTrendInsights = document.getElementById("overview-trend-insights");
+  var documentsSelectAllBtn = document.getElementById("documents-select-all-btn");
+  var documentsClearSelectionBtn = document.getElementById("documents-clear-selection-btn");
+  var documentsBulkDeleteBtn = document.getElementById("documents-bulk-delete-btn");
+  var documentsFeedback = document.getElementById("documents-feedback");
   var documentsTable = document.getElementById("documents-table");
   var uploadZone = document.getElementById("upload-zone");
   var fileInput = document.getElementById("file-input");
@@ -83,6 +87,7 @@
   var currentTypeFilter = "all";
   var currentSeverityFilter = "all";
   var documentSeverityCache = {};
+  var selectedDocumentIds = {};
   var currentDocumentId = "";
   var currentUser = null;
   var currentRiskFilter = "all";
@@ -90,6 +95,7 @@
   var settingsLoaded = false;
   var mobileNavBreakpoint = window.matchMedia("(max-width: 980px)");
   var resultsFeedbackTimer = null;
+  var documentsFeedbackTimer = null;
   var sessionHandlingInFlight = false;
   var overviewComparisonToken = 0;
   var pageTitles = {
@@ -259,9 +265,11 @@
     currentTypeFilter = "all";
     currentSeverityFilter = "all";
     documentSeverityCache = {};
+    selectedDocumentIds = {};
     settingsLoaded = false;
     setSettingsFeedback("", "");
     setResultsFeedback("", "");
+    setDocumentsFeedback("", "");
     setCurrentUser(null);
 
     if (dashboardSearchInput) {
@@ -382,6 +390,96 @@
       resultsFeedbackTimer = window.setTimeout(function () {
         setResultsFeedback("", "");
       }, 3200);
+    }
+  }
+
+  function setInlineFeedback(element, timerName, message, tone) {
+    if (!element) return;
+
+    if (timerName === "documents" && documentsFeedbackTimer) {
+      window.clearTimeout(documentsFeedbackTimer);
+      documentsFeedbackTimer = null;
+    }
+
+    if (!message) {
+      element.hidden = true;
+      element.textContent = "";
+      element.removeAttribute("data-tone");
+      return;
+    }
+
+    element.hidden = false;
+    element.textContent = message;
+    element.setAttribute("data-tone", tone || "info");
+
+    if (tone !== "error" && timerName === "documents") {
+      documentsFeedbackTimer = window.setTimeout(function () {
+        setDocumentsFeedback("", "");
+      }, 3600);
+    }
+  }
+
+  function setDocumentsFeedback(message, tone) {
+    setInlineFeedback(documentsFeedback, "documents", message, tone);
+  }
+
+  function getSelectedDocumentIds() {
+    return Object.keys(selectedDocumentIds).filter(function (documentId) {
+      return Boolean(selectedDocumentIds[documentId]);
+    });
+  }
+
+  function clearSelectedDocuments() {
+    selectedDocumentIds = {};
+  }
+
+  function pruneSelectedDocuments(documents) {
+    var allowed = {};
+
+    (Array.isArray(documents) ? documents : []).forEach(function (documentItem) {
+      if (documentItem && documentItem.id) {
+        allowed[documentItem.id] = true;
+      }
+    });
+
+    Object.keys(selectedDocumentIds).forEach(function (documentId) {
+      if (!allowed[documentId]) {
+        delete selectedDocumentIds[documentId];
+      }
+    });
+  }
+
+  function syncDocumentBulkActions(visibleDocuments) {
+    var visibleIds = (Array.isArray(visibleDocuments) ? visibleDocuments : []).map(function (documentItem) {
+      return documentItem.id;
+    });
+    var selectedIds = getSelectedDocumentIds();
+    var selectedCount = selectedIds.length;
+    var selectedVisibleCount = visibleIds.filter(function (documentId) {
+      return Boolean(selectedDocumentIds[documentId]);
+    }).length;
+    var hasVisibleDocuments = visibleIds.length > 0;
+    var allVisibleSelected = hasVisibleDocuments && selectedVisibleCount === visibleIds.length;
+
+    if (documentsSelectAllBtn) {
+      documentsSelectAllBtn.disabled = !hasVisibleDocuments;
+      documentsSelectAllBtn.textContent = allVisibleSelected
+        ? "Visiveis selecionados"
+        : "Selecionar visiveis";
+    }
+
+    if (documentsClearSelectionBtn) {
+      documentsClearSelectionBtn.disabled = selectedCount === 0;
+      documentsClearSelectionBtn.textContent = selectedCount > 0
+        ? "Limpar selecao (" + selectedCount + ")"
+        : "Limpar selecao";
+    }
+
+    if (documentsBulkDeleteBtn) {
+      documentsBulkDeleteBtn.disabled = selectedCount === 0;
+      documentsBulkDeleteBtn.textContent = selectedCount > 0
+        ? "Excluir selecionados (" + selectedCount + ")"
+        : "Excluir selecionados";
     }
   }
 
@@ -957,11 +1055,22 @@
     });
   }
 
-  function createDocumentRowMarkup(documentItem) {
+  function createDocumentRowMarkup(documentItem, options) {
+    var config = options || {};
     var status = getStatusMeta(documentItem.processing_status);
+    var isSelectable = Boolean(config.selectable);
+    var isSelected = Boolean(selectedDocumentIds[documentItem.id]);
+    var rowClasses = ["table-row"];
+
+    if (isSelected) {
+      rowClasses.push("is-selected");
+    }
 
     return [
-      '<div class="table-row" data-document-id="' + escapeHtml(documentItem.id) + '">',
+      '<div class="' + rowClasses.join(" ") + '" data-document-id="' + escapeHtml(documentItem.id) + '">',
+      isSelectable
+        ? '<span class="table-select"><input class="table-checkbox" type="checkbox" data-action="select" aria-label="Selecionar ' + escapeHtml(documentItem.original_name || "documento") + '"' + (isSelected ? " checked" : "") + "></span>"
+        : "",
       '<span class="table-doc">',
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
       escapeHtml(documentItem.original_name || "documento"),
@@ -997,6 +1106,7 @@
     if (!tableElement) return;
 
     var rows = documents;
+    var isSelectable = tableElement === documentsTable;
     if (typeof limit === "number") {
       rows = documents.slice(0, limit);
     }
@@ -1006,12 +1116,19 @@
       return;
     }
 
-    var head = '<div class="table-head"><span>Documento</span><span>Tipo</span><span>Data</span><span>Status</span><span></span></div>';
+    var head = isSelectable
+      ? '<div class="table-head"><span></span><span>Documento</span><span>Tipo</span><span>Data</span><span>Status</span><span></span></div>'
+      : '<div class="table-head"><span>Documento</span><span>Tipo</span><span>Data</span><span>Status</span><span></span></div>';
     var body = rows.length
-      ? rows.map(createDocumentRowMarkup).join("")
+      ? rows.map(function (documentItem) {
+        return createDocumentRowMarkup(documentItem, { selectable: isSelectable });
+      }).join("")
       : '<div class="table-empty">' + getDocumentSearchEmptyMessage() + "</div>";
 
     tableElement.innerHTML = head + body;
+    if (isSelectable) {
+      syncDocumentBulkActions(rows);
+    }
   }
 
   function renderSelectOptions(selectElement, documents) {
@@ -1856,6 +1973,7 @@
 
   function syncDocumentViews(documents) {
     currentDocuments = Array.isArray(documents) ? documents : [];
+    pruneSelectedDocuments(currentDocuments);
     applySearchFilter();
   }
 
@@ -2943,6 +3061,109 @@ function readFilePayload(file) {
     await loadDocuments();
   }
 
+  async function performDocumentDeletion(documentId) {
+    await requestJson("/api/documents/" + encodeURIComponent(documentId), {
+      method: "DELETE"
+    });
+
+    delete analysisCache[documentId];
+    delete overviewActivityCache[documentId];
+    delete documentSeverityCache[documentId];
+    delete selectedDocumentIds[documentId];
+
+    if (currentDocumentId === documentId) {
+      currentDocumentId = "";
+    }
+  }
+
+  async function deleteDocument(documentId, options) {
+    var config = options || {};
+    var documentItem = findDocumentById(documentId);
+    var documentName = documentItem && documentItem.original_name
+      ? documentItem.original_name
+      : "este documento";
+
+    if (!documentId) {
+      return null;
+    }
+
+    if (config.confirm !== false && !window.confirm('Excluir "' + documentName + '"? Essa acao tambem remove o documento do banco e nao pode ser desfeita.')) {
+      return null;
+    }
+
+    await performDocumentDeletion(documentId);
+
+    if (config.reload !== false) {
+      await loadDocuments();
+    }
+
+    if (config.feedback !== false) {
+      setDocumentsFeedback('"' + documentName + '" foi excluido do painel e do banco.', "success");
+    }
+
+    return {
+      id: documentId,
+      name: documentName
+    };
+  }
+
+  async function deleteSelectedDocuments() {
+    var selectedIds = getSelectedDocumentIds();
+    var successCount = 0;
+    var failures = [];
+    var firstDeletedName = "";
+
+    if (!selectedIds.length) {
+      return;
+    }
+
+    if (!window.confirm("Excluir " + selectedIds.length + " documento" + (selectedIds.length > 1 ? "s" : "") + "? Essa acao tambem remove os registros do banco e nao pode ser desfeita.")) {
+      return;
+    }
+
+    if (documentsBulkDeleteBtn) {
+      documentsBulkDeleteBtn.disabled = true;
+      documentsBulkDeleteBtn.textContent = "Excluindo...";
+    }
+
+    setDocumentsFeedback("Excluindo documentos selecionados...", "info");
+
+    for (var index = 0; index < selectedIds.length; index += 1) {
+      try {
+        var result = await deleteDocument(selectedIds[index], {
+          confirm: false,
+          reload: false,
+          feedback: false
+        });
+        successCount += 1;
+        if (!firstDeletedName && result && result.name) {
+          firstDeletedName = result.name;
+        }
+      } catch (error) {
+        failures.push(error && error.message ? error.message : "Falha ao excluir um documento.");
+      }
+    }
+
+    await loadDocuments();
+
+    if (failures.length) {
+      setDocumentsFeedback(
+        successCount > 0
+          ? successCount + " documento" + (successCount > 1 ? "s foram" : " foi") + " excluido" + (successCount > 1 ? "s" : "") + ", mas ainda houve " + failures.length + " falha" + (failures.length > 1 ? "s" : "") + "."
+          : "Nao foi possivel excluir os documentos selecionados agora.",
+        successCount > 0 ? "info" : "error"
+      );
+      return;
+    }
+
+    setDocumentsFeedback(
+      successCount === 1 && firstDeletedName
+        ? '"' + firstDeletedName + '" foi excluido do painel e do banco.'
+        : successCount + " documentos foram excluidos do painel e do banco.",
+      "success"
+    );
+  }
+
   function applyRiskFilter(filter) {
     currentRiskFilter = filter || "all";
     Array.prototype.forEach.call(document.querySelectorAll("#page-risks .risk-card"), function (card) {
@@ -3148,14 +3369,74 @@ function readFilePayload(file) {
   }
 
   function bindDocumentTables() {
+    if (documentsSelectAllBtn) {
+      documentsSelectAllBtn.addEventListener("click", function () {
+        filterDocuments(currentDocuments).forEach(function (documentItem) {
+          selectedDocumentIds[documentItem.id] = true;
+        });
+        applySearchFilter();
+      });
+    }
+
+    if (documentsClearSelectionBtn) {
+      documentsClearSelectionBtn.addEventListener("click", function () {
+        clearSelectedDocuments();
+        applySearchFilter();
+        setDocumentsFeedback("", "");
+      });
+    }
+
+    if (documentsBulkDeleteBtn) {
+      documentsBulkDeleteBtn.addEventListener("click", async function () {
+        try {
+          await deleteSelectedDocuments();
+        } catch (error) {
+          setDocumentsFeedback(error.message || "Nao foi possivel excluir os documentos selecionados agora.", "error");
+        }
+      });
+    }
+
     [overviewDocumentsTable, documentsTable].forEach(function (tableElement) {
       if (!tableElement) return;
+
+      tableElement.addEventListener("change", function (event) {
+        var checkbox = event.target.closest(".table-checkbox");
+        var row;
+        var documentId;
+
+        if (!checkbox || tableElement !== documentsTable) {
+          return;
+        }
+
+        row = checkbox.closest(".table-row");
+        if (!row) {
+          return;
+        }
+
+        documentId = row.getAttribute("data-document-id");
+        if (!documentId) {
+          return;
+        }
+
+        if (checkbox.checked) {
+          selectedDocumentIds[documentId] = true;
+        } else {
+          delete selectedDocumentIds[documentId];
+        }
+
+        applySearchFilter();
+      });
 
       tableElement.addEventListener("click", async function (event) {
         var actionButton = event.target.closest("[data-action]");
         var row = event.target.closest(".table-row");
         if (!row) return;
         var documentId = row.getAttribute("data-document-id");
+
+        if (event.target.closest(".table-select")) {
+          event.stopPropagation();
+          return;
+        }
 
         if (actionButton) {
           event.preventDefault();

@@ -1,4 +1,5 @@
 var http = require("../lib/http");
+var observability = require("../lib/observability");
 
 var handlers = {
   index: require("../routes-src/analyses/index"),
@@ -13,6 +14,11 @@ module.exports = async function handler(req, res) {
   var routeHandler = handlers[action];
 
   if (!routeHandler) {
+    observability.logAppEvent("warn", "analyses.invalid_action", {
+      route: "api.analyses",
+      action: action || null,
+      path: req.url || "/api/analyses"
+    });
     return http.notFound(res, "Analysis route not found.");
   }
 

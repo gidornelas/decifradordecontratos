@@ -42,7 +42,9 @@
   var overviewAttentionCount = document.getElementById("overview-attention-count");
   var overviewSafeCount = document.getElementById("overview-safe-count");
   var overviewActivityList = document.getElementById("overview-activity-list");
+  var overviewActivitySummary = document.getElementById("overview-activity-summary");
   var historyActivityList = document.getElementById("history-activity-list");
+  var historyActivitySummary = document.getElementById("history-activity-summary");
   var overviewTypeInsights = document.getElementById("overview-type-insights");
   var overviewScoreBands = document.getElementById("overview-score-bands");
   var overviewTrendInsights = document.getElementById("overview-trend-insights");
@@ -52,6 +54,7 @@
   var documentsFeedback = document.getElementById("documents-feedback");
   var documentsFeedbackText = document.getElementById("documents-feedback-text");
   var documentsFeedbackUndoBtn = document.getElementById("documents-feedback-undo-btn");
+  var documentsSelectionSummary = document.getElementById("documents-selection-summary");
   var documentsTable = document.getElementById("documents-table");
   var uploadZone = document.getElementById("upload-zone");
   var fileInput = document.getElementById("file-input");
@@ -67,6 +70,7 @@
   var shareResultsBtn = document.getElementById("share-results-btn");
   var copyResultsBtn = document.getElementById("copy-results-btn");
   var resultsFeedback = document.getElementById("results-feedback");
+  var analysisFlowTabs = Array.prototype.slice.call(document.querySelectorAll(".analysis-flow-tab"));
   var settingsFullNameInput = document.getElementById("settings-full-name");
   var settingsEmailInput = document.getElementById("settings-email");
   var settingsPlanInput = document.getElementById("settings-plan");
@@ -77,6 +81,9 @@
   var settingsStorageTitle = document.getElementById("settings-storage-title");
   var settingsStorageDetail = document.getElementById("settings-storage-detail");
   var settingsStorageDot = document.getElementById("settings-storage-dot");
+  var settingsUsageTitle = document.getElementById("settings-usage-title");
+  var settingsUsageDetail = document.getElementById("settings-usage-detail");
+  var settingsUsageDot = document.getElementById("settings-usage-dot");
   var riskFilters = Array.prototype.slice.call(document.querySelectorAll(".risk-filter"));
   var guidedTabs = Array.prototype.slice.call(document.querySelectorAll(".guided-tab"));
   var pages = Array.prototype.slice.call(document.querySelectorAll(".page"));
@@ -104,6 +111,7 @@
   var currentRiskFilter = "all";
   var currentGuidedTab = "resumo";
   var settingsLoaded = false;
+  var latestHealthSnapshot = null;
   var mobileNavBreakpoint = window.matchMedia("(max-width: 980px)");
   var resultsFeedbackTimer = null;
   var documentsFeedbackTimer = null;
@@ -120,6 +128,17 @@
     results: "Resultados",
     settings: "Configurações"
   };
+
+  pageTitles = Object.assign({}, pageTitles, {
+    overview: "Inicio",
+    documents: "Contratos",
+    history: "Atividade",
+    analyze: "Nova analise",
+    risks: "Riscos e alertas",
+    guided: "Revisao guiada",
+    results: "Resumo final",
+    settings: "Conta"
+  });
 
   function buildRequestOptions(options) {
     var config = Object.assign({ credentials: "include" }, options || {});
@@ -290,6 +309,7 @@
     pendingDeletionBatch = null;
     clearPendingDeletionStorage();
     settingsLoaded = false;
+    latestHealthSnapshot = null;
     setSettingsFeedback("", "");
     setResultsFeedback("", "");
     setDocumentsFeedback("", "");
@@ -537,6 +557,8 @@
         ? "Excluir selecionados (" + selectedCount + ")"
         : "Excluir selecionados";
     }
+
+    renderDocumentsSelectionSummary(visibleDocuments);
   }
 
   function hasPendingDeletionForDocument(documentId) {
@@ -607,6 +629,7 @@
       pendingDeletionBatch = null;
       clearPendingDeletionStorage();
       setDocumentsFeedback("", "");
+      renderDocumentsSelectionSummary(filterDocuments(currentDocuments));
     }, remainingMs);
   }
 
@@ -649,6 +672,7 @@
     };
 
     schedulePendingDeletionFeedbackExpiry();
+    renderDocumentsSelectionSummary(filterDocuments(currentDocuments));
     setDocumentsUndoFeedback(
       parsed.documentIds.length === 1
         ? '"' + (pendingDeletionBatch.documentNames[0] || "documento") + '" esta na lixeira temporaria. Voce ainda pode desfazer.'
@@ -690,6 +714,10 @@
     if (topbarTitle) {
       topbarTitle.textContent = pageTitles[pageName] || "Decodificador";
     }
+
+    analysisFlowTabs.forEach(function (tab) {
+      tab.classList.toggle("is-active", tab.getAttribute("data-analysis-page") === pageName);
+    });
 
     if (pageName === "settings") {
       loadSettingsProfile(false);
@@ -801,11 +829,13 @@
   async function loadSettingsProfile(forceRefresh) {
     if (!forceRefresh && settingsLoaded && currentUser) {
       populateSettingsFields(currentUser);
+      renderSettingsUsageStatus(currentDocuments, latestHealthSnapshot);
       return;
     }
 
     if (!currentUser && !forceRefresh) {
       populateSettingsFields(null);
+      renderSettingsUsageStatus(currentDocuments, latestHealthSnapshot);
       return;
     }
 
@@ -823,9 +853,13 @@
 
     try {
       var healthData = await requestJson("/api/health", { method: "GET" });
+      latestHealthSnapshot = healthData || null;
       renderStorageStatus(healthData && healthData.checks);
+      renderSettingsUsageStatus(currentDocuments, healthData || {});
     } catch (error) {
+      latestHealthSnapshot = null;
       renderStorageStatus(null);
+      renderSettingsUsageStatus(currentDocuments, null);
     }
   }
 
@@ -1389,6 +1423,9 @@
 
     if (!rows.length && !getSearchQuery() && currentStatusFilter === "all" && currentTypeFilter === "all" && currentSeverityFilter === "all") {
       tableElement.innerHTML = getDocumentOnboardingMarkup();
+      if (isSelectable) {
+        syncDocumentBulkActions([]);
+      }
       return;
     }
 
@@ -1404,6 +1441,20 @@
     tableElement.innerHTML = head + body;
     if (isSelectable) {
       syncDocumentBulkActions(rows);
+    }
+  }
+
+  function renderTableLoading(tableElement, message, selectable) {
+    if (!tableElement) return;
+
+    var head = selectable
+      ? '<div class="table-head"><span></span><span>Documento</span><span>Tipo</span><span>Data</span><span>Status</span><span></span></div>'
+      : '<div class="table-head"><span>Documento</span><span>Tipo</span><span>Data</span><span>Status</span><span></span></div>';
+
+    tableElement.innerHTML = head + '<div class="table-empty">' + escapeHtml(message || "Carregando dados...") + "</div>";
+
+    if (selectable) {
+      syncDocumentBulkActions([]);
     }
   }
 
@@ -1506,6 +1557,174 @@
     });
 
     return summary;
+  }
+
+  function setNavBadge(pageName, count) {
+    var navItem = document.querySelector('.nav-item[data-page="' + pageName + '"]');
+    var badge = navItem ? navItem.querySelector(".nav-badge") : null;
+    var normalizedCount = Number(count) || 0;
+
+    if (!badge) {
+      return;
+    }
+
+    badge.textContent = String(normalizedCount);
+    badge.hidden = normalizedCount <= 0;
+  }
+
+  function updateNavigationBadges(documents) {
+    var source = Array.isArray(documents) ? documents : [];
+    var statusSummary = countDocumentsByStatus(source);
+    var analysisQueueCount = statusSummary.uploaded + statusSummary.analyzing + statusSummary.failed;
+    var riskyDocumentsCount = source.filter(function (documentItem) {
+      var severity = getDocumentSeverityKey(documentItem);
+      return severity === "critical" || severity === "attention";
+    }).length;
+
+    setNavBadge("analyze", analysisQueueCount);
+    setNavBadge("risks", riskyDocumentsCount);
+  }
+
+  function buildSummaryPill(label, value, tone) {
+    return '<span class="activity-summary__pill"' +
+      (tone ? ' data-tone="' + escapeHtml(tone) + '"' : "") +
+      '><strong>' + escapeHtml(String(value)) + "</strong> " + escapeHtml(label) + "</span>";
+  }
+
+  function renderActivitySummary(element, pills) {
+    if (!element) {
+      return;
+    }
+
+    var items = Array.isArray(pills) ? pills.filter(Boolean) : [];
+    element.innerHTML = items.join("");
+  }
+
+  function renderOverviewActivitySummary(documents, items) {
+    var summary = countDocumentsByStatus(documents);
+    var criticalCount = (Array.isArray(items) ? items : []).filter(function (item) {
+      return item && item.severityKey === "critical";
+    }).length;
+    var attentionCount = (Array.isArray(items) ? items : []).filter(function (item) {
+      return item && item.severityKey === "attention";
+    }).length;
+    var pendingCount = summary.analyzing + summary.uploaded;
+
+    renderActivitySummary(overviewActivitySummary, [
+      buildSummaryPill("no filtro atual", summary.total, ""),
+      pendingCount ? buildSummaryPill("aguardando andamento", pendingCount, "warn") : "",
+      criticalCount ? buildSummaryPill("alertas criticos", criticalCount, "danger") : "",
+      attentionCount ? buildSummaryPill("itens de atencao", attentionCount, "warn") : "",
+      summary.completed ? buildSummaryPill("analises concluidas", summary.completed, "safe") : "",
+      buildSummaryPill(getCurrentPeriodInsightLabel(), "Janela", "")
+    ]);
+  }
+
+  function renderHistoryActivitySummary(items) {
+    var source = Array.isArray(items) ? items : [];
+    var trashCount = source.filter(function (item) {
+      return item && item.eventKey === "trash";
+    }).length;
+    var restoreCount = source.filter(function (item) {
+      return item && item.eventKey === "restore";
+    }).length;
+    var purgeCount = source.filter(function (item) {
+      return item && item.eventKey === "purge";
+    }).length;
+
+    renderActivitySummary(historyActivitySummary, [
+      buildSummaryPill("eventos no historico", source.length, ""),
+      trashCount ? buildSummaryPill("envios para lixeira", trashCount, "warn") : "",
+      restoreCount ? buildSummaryPill("restauracoes", restoreCount, "safe") : "",
+      purgeCount ? buildSummaryPill("limpezas automaticas", purgeCount, "") : ""
+    ]);
+  }
+
+  function renderDocumentsSelectionSummary(visibleDocuments) {
+    if (!documentsSelectionSummary) {
+      return;
+    }
+
+    var visibleCount = Array.isArray(visibleDocuments) ? visibleDocuments.length : 0;
+    var totalCount = Array.isArray(currentDocuments) ? currentDocuments.length : 0;
+    var selectedCount = getSelectedDocumentIds().length;
+    var remainingSeconds = pendingDeletionBatch
+      ? Math.max(0, Math.ceil((pendingDeletionBatch.expiresAt - Date.now()) / 1000))
+      : 0;
+    var message = "";
+
+    if (pendingDeletionBatch && pendingDeletionBatch.documentIds.length) {
+      message = "<strong>" + escapeHtml(String(pendingDeletionBatch.documentIds.length)) +
+        "</strong> documento" + (pendingDeletionBatch.documentIds.length > 1 ? "s" : "") +
+        " na lixeira temporaria. Voce ainda pode desfazer por cerca de <strong>" +
+        escapeHtml(String(remainingSeconds)) + "s</strong>.";
+    } else if (selectedCount > 0) {
+      message = "<strong>" + escapeHtml(String(selectedCount)) + "</strong> selecionado" +
+        (selectedCount > 1 ? "s" : "") + " para acao em lote";
+
+      if (visibleCount > 0) {
+        message += ". O filtro atual mostra <strong>" + escapeHtml(String(visibleCount)) +
+          "</strong> de <strong>" + escapeHtml(String(totalCount)) + "</strong> documento" +
+          (totalCount > 1 ? "s" : "") + ".";
+      } else {
+        message += ". Ajuste os filtros se quiser revisar a selecao antes de excluir.";
+      }
+    } else if (visibleCount > 0 && visibleCount !== totalCount) {
+      message = "Mostrando <strong>" + escapeHtml(String(visibleCount)) + "</strong> de <strong>" +
+        escapeHtml(String(totalCount)) + "</strong> documento" + (totalCount > 1 ? "s" : "") +
+        " com os filtros atuais.";
+    }
+
+    documentsSelectionSummary.hidden = !message;
+    documentsSelectionSummary.innerHTML = message;
+  }
+
+  function renderSettingsUsageStatus(documents, healthData) {
+    if (!settingsUsageTitle || !settingsUsageDetail || !settingsUsageDot) {
+      return;
+    }
+
+    var summary = countDocumentsByStatus(documents);
+    var checks = healthData && healthData.checks ? healthData.checks : {};
+    var analyses = healthData && healthData.operations ? healthData.operations.analyses : null;
+    var recentTotals = analyses && analyses.totals ? analyses.totals : null;
+    var latestFailure = analyses && analyses.latestFailure ? analyses.latestFailure : null;
+    var pendingCount = summary.uploaded + summary.analyzing;
+
+    settingsUsageDot.classList.remove("activity-dot--safe", "activity-dot--warn", "activity-dot--danger", "activity-dot--default");
+
+    if (!summary.total) {
+      settingsUsageDot.classList.add("activity-dot--default");
+      settingsUsageTitle.textContent = "pronto para receber o primeiro contrato";
+      settingsUsageDetail.textContent = "Assim que voce enviar um documento, este resumo mostra volume, andamento e saude recente das analises.";
+      return;
+    }
+
+    if (summary.failed || latestFailure) {
+      settingsUsageDot.classList.add("activity-dot--warn");
+      settingsUsageTitle.textContent = summary.failed
+        ? summary.failed + " documento" + (summary.failed > 1 ? "s precisam" : " precisa") + " de nova tentativa"
+        : "ha falhas recentes para revisar";
+      settingsUsageDetail.textContent = latestFailure && latestFailure.documentName
+        ? 'Ultima falha conhecida: "' + latestFailure.documentName + '" em ' + formatRelativeDate(latestFailure.updatedAt || latestFailure.createdAt) + "."
+        : "Revise os documentos com erro antes de seguir com novos envios.";
+      return;
+    }
+
+    if (pendingCount) {
+      settingsUsageDot.classList.add("activity-dot--warn");
+      settingsUsageTitle.textContent = pendingCount + " documento" + (pendingCount > 1 ? "s ainda estao" : " ainda esta") + " em andamento";
+      settingsUsageDetail.textContent = summary.completed
+        ? summary.completed + " analise" + (summary.completed > 1 ? "s ja concluidas" : " ja concluida") + " no painel."
+        : "O painel aguarda a primeira analise concluida.";
+      return;
+    }
+
+    settingsUsageDot.classList.add(checks.analysisRecentSuccess ? "activity-dot--safe" : "activity-dot--default");
+    settingsUsageTitle.textContent = summary.completed + " analise" + (summary.completed > 1 ? "s concluidas" : " concluida") + " no painel";
+    settingsUsageDetail.textContent = recentTotals && recentTotals.total
+      ? recentTotals.completed + " concluida" + (recentTotals.completed > 1 ? "s" : "") + " nas ultimas 24h, sem falhas recentes."
+      : "Seu historico recente esta estavel e pronto para novas comparacoes.";
   }
 
   function getOnboardingState() {
@@ -1635,6 +1854,14 @@
   function normalizeComparisonTypeLabel(label) {
     var normalized = String(label || "").trim();
     return normalized || "Contrato sem tipo definido";
+  }
+
+  function getCurrentPeriodInsightLabel() {
+    if (currentPeriodFilter === "7d") return "ultimos 7 dias";
+    if (currentPeriodFilter === "30d") return "ultimos 30 dias";
+    if (currentPeriodFilter === "90d") return "ultimos 90 dias";
+    if (currentPeriodFilter === "month") return "este mes";
+    return "todo o periodo";
   }
 
   function getScoreBand(score) {
@@ -1925,10 +2152,110 @@
     ].join("");
   }
 
+  async function buildOverviewComparisonsDeep(documents) {
+    var base = await buildOverviewComparisons(documents);
+    var sourceDocuments = Array.isArray(documents) ? documents : [];
+    var periodLabel = getCurrentPeriodInsightLabel();
+    var typeItems = Array.isArray(base && base.types) ? base.types.slice() : [];
+    var scoredTypes = typeItems.filter(function (item) {
+      return item && item.averageScore !== null && item.averageScore !== undefined;
+    });
+    var scoredTimeline = base && base.trend && Array.isArray(base.trend.items)
+      ? base.trend.items.slice().sort(function (left, right) {
+        return left.score - right.score;
+      })
+      : [];
+    var lowestItem = scoredTimeline[0] || null;
+    var highestItem = scoredTimeline[scoredTimeline.length - 1] || null;
+    var completionStats = {
+      completed: 0,
+      failed: 0,
+      pending: 0
+    };
+    var riskiestType;
+    var safestType;
+
+    sourceDocuments.forEach(function (documentItem) {
+      var normalizedStatus = String(documentItem && documentItem.processing_status || "pending").toLowerCase();
+
+      if (normalizedStatus === "completed") {
+        completionStats.completed += 1;
+      } else if (normalizedStatus === "failed") {
+        completionStats.failed += 1;
+      } else {
+        completionStats.pending += 1;
+      }
+    });
+
+    typeItems = typeItems.map(function (item) {
+      var share = sourceDocuments.length
+        ? Math.round((item.count / sourceDocuments.length) * 100)
+        : 0;
+
+      return Object.assign({}, item, {
+        share: share
+      });
+    });
+
+    riskiestType = scoredTypes.slice().sort(function (left, right) {
+      return right.averageScore - left.averageScore;
+    })[0] || null;
+
+    safestType = scoredTypes.slice().sort(function (left, right) {
+      return left.averageScore - right.averageScore;
+    })[0] || null;
+
+    return Object.assign({}, base || {}, {
+      periodLabel: periodLabel,
+      types: typeItems,
+      trend: Object.assign({}, base && base.trend ? base.trend : {}, {
+        latestLabel: highestItem && lowestItem
+          ? "Faixa observada: " + lowestItem.score + " a " + highestItem.score + "/100"
+          : base && base.trend ? base.trend.latestLabel : "Sem analise recente",
+        latestMeta: highestItem && lowestItem
+          ? "Menor score em " + lowestItem.documentName + " e maior score em " + highestItem.documentName + "."
+          : base && base.trend ? base.trend.latestMeta : "Conclua uma analise para liberar a linha do tempo.",
+        latestClass: highestItem
+          ? getScoreBand(highestItem.score).pillClass
+          : base && base.trend ? base.trend.latestClass : "comparison-pill--neutral",
+        velocityLabel: "Janela analisada: " + periodLabel,
+        velocityMeta:
+          completionStats.completed + " concluida" + (completionStats.completed !== 1 ? "s" : "") +
+          ", " + completionStats.failed + " com falha" + (completionStats.failed !== 1 ? "s" : "") +
+          " e " + completionStats.pending + " pendente" + (completionStats.pending !== 1 ? "s" : "") + ".",
+        focusLabel: riskiestType
+          ? "Mais sensivel: " + riskiestType.label
+          : "Tipos em consolidacao",
+        focusMeta: riskiestType && safestType
+          ? "Pior media em " + riskiestType.averageScore + "/100" +
+            (safestType && safestType.label !== riskiestType.label
+              ? " · Melhor equilibrio em " + safestType.label + " com " + safestType.averageScore + "/100."
+              : ".")
+          : "Conclua mais analises para destacar os tipos com melhor e pior comportamento."
+      })
+    });
+  }
+
+  function renderOverviewComparisonLoading() {
+    if (overviewTypeInsights) {
+      overviewTypeInsights.innerHTML = '<div class="table-empty">Carregando comparativos por tipo...</div>';
+    }
+
+    if (overviewScoreBands) {
+      overviewScoreBands.innerHTML = '<div class="table-empty">Carregando distribuicao de score...</div>';
+    }
+
+    if (overviewTrendInsights) {
+      overviewTrendInsights.innerHTML = '<div class="table-empty">Carregando tendencia recente...</div>';
+    }
+  }
+
   function refreshOverviewComparisons(documents) {
     var token = ++overviewComparisonToken;
 
-    buildOverviewComparisons(documents)
+    renderOverviewComparisonLoading();
+
+    buildOverviewComparisonsDeep(documents)
       .then(function (comparisons) {
         if (token !== overviewComparisonToken) {
           return;
@@ -2102,6 +2429,22 @@
     setOverviewDistributionFill(overviewSafeFill, safe, totalRiskItems);
   }
 
+  function renderOverviewLoadingState() {
+    renderOverviewKpis({}, { critical: 0, attention: 0, safe: 0 });
+    renderActivitySummary(overviewActivitySummary, []);
+    renderActivitySummary(historyActivitySummary, []);
+
+    if (overviewActivityList) {
+      overviewActivityList.innerHTML = '<div class="table-empty">Carregando atividade recente...</div>';
+    }
+
+    if (historyActivityList) {
+      historyActivityList.innerHTML = '<div class="table-empty">Carregando historico de auditoria...</div>';
+    }
+
+    renderOverviewComparisonLoading();
+  }
+
   async function hydrateDocumentSeverityCache(documents) {
     var sourceDocuments = Array.isArray(documents) ? documents : [];
 
@@ -2160,6 +2503,8 @@
     ])
       .map(createOverviewActivityItem)
       .join("");
+
+    renderOverviewActivitySummary(filterDocuments(currentDocuments), items);
   }
 
   function renderAuditHistory(items) {
@@ -2178,6 +2523,8 @@
     ])
       .map(createOverviewActivityItem)
       .join("");
+
+    renderHistoryActivitySummary(items);
   }
 
   async function buildOverviewActivityFiltered(documents) {
@@ -2305,6 +2652,7 @@
       return item.id === activeDocument.id;
     });
 
+    updateNavigationBadges(currentDocuments);
     renderTable(overviewDocumentsTable, filteredDocuments, 5);
     renderTable(documentsTable, filteredDocuments);
     renderSelectOptions(riskDocSelect, filteredDocuments);
@@ -2318,42 +2666,68 @@
   }
 
   async function loadOverviewData() {
-    try {
-      var responses = await Promise.all([
-        requestJson("/api/dashboard/overview", { method: "GET" }),
-        requestJson("/api/dashboard/risk-distribution", { method: "GET" }),
-        requestJson("/api/dashboard/audit-activity?limit=50", { method: "GET" })
-      ]);
-      var overviewData = responses[0] || {};
-      var riskData = responses[1] || {};
-      var auditData = responses[2] || {};
-      var recentDocuments = Array.isArray(overviewData.recentDocuments)
-        ? overviewData.recentDocuments
-        : currentDocuments.slice(0, 5);
-      var activityItems;
-      var auditItems;
+    var responses = await Promise.all([
+      requestJsonDetailed("/api/dashboard/overview", { method: "GET" }),
+      requestJsonDetailed("/api/dashboard/risk-distribution", { method: "GET" }),
+      requestJsonDetailed("/api/dashboard/audit-activity?limit=50", { method: "GET" })
+    ]);
+    var overviewResponse = responses[0] || {};
+    var riskResponse = responses[1] || {};
+    var auditResponse = responses[2] || {};
+    var overviewData = overviewResponse.ok ? (overviewResponse.payload || {}) : {};
+    var riskData = riskResponse.ok ? (riskResponse.payload || {}) : {};
+    var auditData = auditResponse.ok ? (auditResponse.payload || {}) : {};
+    var recentDocuments = Array.isArray(overviewData.recentDocuments)
+      ? overviewData.recentDocuments
+      : currentDocuments.slice(0, 5);
+    var activityItems = [];
+    var auditItems = [];
+    var partialFailures = [];
 
-      renderOverviewKpis(overviewData.kpis || {}, riskData.distribution || {});
+    if (!overviewResponse.ok) {
+      partialFailures.push("visao geral");
+    }
+
+    if (!riskResponse.ok) {
+      partialFailures.push("distribuicao de riscos");
+    }
+
+    if (!auditResponse.ok) {
+      partialFailures.push("historico de auditoria");
+    }
+
+    renderOverviewKpis(overviewData.kpis || {}, riskData.distribution || {});
+
+    if (overviewResponse.ok) {
       activityItems = await buildOverviewActivityFiltered(recentDocuments);
+    } else {
+      activityItems = buildOverviewActivityFallback(currentDocuments);
+    }
+
+    if (auditResponse.ok) {
       auditItems = buildAuditActivityItems(auditData.events || []);
       auditHistoryItems = auditItems;
-      overviewActivityItems = mergeOverviewActivityItems(activityItems, auditItems, 6);
-      renderOverviewActivity(filterOverviewActivityItems(overviewActivityItems));
-      renderAuditHistory(filterAuditHistoryItems(auditHistoryItems));
-      refreshOverviewComparisons(filterDocuments(currentDocuments));
-    } catch (error) {
-      renderOverviewKpis({}, { critical: 0, attention: 0, safe: 0 });
-      overviewActivityItems = buildOverviewActivityFallback(currentDocuments);
+    } else {
       auditHistoryItems = [];
-      renderOverviewActivity(filterOverviewActivityItems(overviewActivityItems));
-      renderAuditHistory(filterAuditHistoryItems(auditHistoryItems));
-      refreshOverviewComparisons(filterDocuments(currentDocuments));
+    }
+
+    overviewActivityItems = mergeOverviewActivityItems(activityItems, auditItems, 6);
+    renderOverviewActivity(filterOverviewActivityItems(overviewActivityItems));
+    renderAuditHistory(filterAuditHistoryItems(auditHistoryItems));
+    refreshOverviewComparisons(filterDocuments(currentDocuments));
+
+    if (partialFailures.length) {
+      setDocumentsFeedback(
+        "Parte do painel nao carregou agora: " + partialFailures.join(", ") + ". Os demais dados continuam disponiveis.",
+        "info"
+      );
     }
   }
 
   function syncDocumentViews(documents) {
     currentDocuments = Array.isArray(documents) ? documents : [];
     pruneSelectedDocuments(currentDocuments);
+    renderSettingsUsageStatus(currentDocuments, latestHealthSnapshot);
     applySearchFilter();
   }
 
@@ -3150,6 +3524,15 @@
   }
 
   async function loadDocuments() {
+    setDocumentsFeedback("", "");
+    renderTableLoading(overviewDocumentsTable, "Carregando documentos recentes...", false);
+    renderTableLoading(documentsTable, "Carregando documentos do painel...", true);
+    renderOverviewLoadingState();
+    renderAnalysisEmptyState(
+      "Carregando painel",
+      "Buscando seus documentos e as analises mais recentes."
+    );
+
     try {
       var data = await requestJson("/api/documents", { method: "GET" });
       syncDocumentViews(data.documents || []);
@@ -3169,6 +3552,10 @@
     } catch (error) {
       syncDocumentViews([]);
       await loadOverviewData();
+      setDocumentsFeedback(
+        error.message || "Nao foi possivel carregar seus documentos agora.",
+        "error"
+      );
       renderAnalysisEmptyState(
         "Falha ao carregar documentos",
         error.message || "Não foi possível carregar seus documentos agora."
@@ -3409,7 +3796,7 @@ function readFilePayload(file) {
 
   function openDocument(documentId, pageName) {
     if (!documentId) return;
-    switchPage(pageName || "analyze");
+    switchPage(pageName || "results");
     loadAndRenderDocumentAnalysis(documentId);
   }
 
@@ -3575,6 +3962,7 @@ function readFilePayload(file) {
     pendingDeletionBatch = null;
     clearPendingDeletionStorage();
     setDocumentsFeedback("Restaurando documento(s) da lixeira...", "info");
+    renderDocumentsSelectionSummary(filterDocuments(currentDocuments));
 
     for (var index = 0; index < batch.documentIds.length; index += 1) {
       try {
@@ -3698,6 +4086,7 @@ function readFilePayload(file) {
     };
     persistPendingDeletionBatch();
     schedulePendingDeletionFeedbackExpiry();
+    renderDocumentsSelectionSummary(filterDocuments(currentDocuments));
 
     feedbackMessage = documentsToDelete.length === 1
       ? label + " saiu do painel. Desfaca em alguns segundos se foi engano."
@@ -4040,11 +4429,11 @@ function readFilePayload(file) {
             return;
           }
 
-          openDocument(documentId, "analyze");
+          openDocument(documentId, "results");
           return;
         }
 
-        openDocument(documentId, "analyze");
+        openDocument(documentId, "results");
       });
     });
   }

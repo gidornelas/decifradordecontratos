@@ -1,4 +1,5 @@
 var http = require("../lib/http");
+var observability = require("../lib/observability");
 
 var handlers = {
   login: require("../routes-src/auth/login"),
@@ -12,6 +13,11 @@ module.exports = async function handler(req, res) {
   var routeHandler = handlers[action];
 
   if (!routeHandler) {
+    observability.logAppEvent("warn", "auth.invalid_action", {
+      route: "api.auth",
+      action: action || null,
+      path: req.url || "/api/auth"
+    });
     return http.notFound(res, "Auth route not found.");
   }
 

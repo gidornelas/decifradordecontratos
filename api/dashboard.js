@@ -1,4 +1,5 @@
 var http = require("../lib/http");
+var observability = require("../lib/observability");
 
 var handlers = {
   overview: require("../routes-src/dashboard/overview"),
@@ -12,6 +13,11 @@ module.exports = async function handler(req, res) {
   var routeHandler = handlers[action];
 
   if (!routeHandler) {
+    observability.logAppEvent("warn", "dashboard.invalid_action", {
+      route: "api.dashboard",
+      action: action || null,
+      path: req.url || "/api/dashboard"
+    });
     return http.notFound(res, "Dashboard route not found.");
   }
 

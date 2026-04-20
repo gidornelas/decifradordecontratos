@@ -3,13 +3,17 @@ var auth = require("../../lib/auth");
 var http = require("../../lib/http");
 var observability = require("../../lib/observability");
 var retention = require("../../lib/retention");
+var retentionJobRuns = require("../../lib/retention-job-runs");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "POST") {
     return http.methodNotAllowed(res, ["GET", "POST"]);
   }
 
-  observability.logRequestStart(req, res, { route: "internal.retention" });
+  var requestContext = observability.logRequestStart(req, res, {
+    route: "internal.retention"
+  });
+  var startedAt = new Date();
 
   try {
     var serverEnv = env.getServerEnv();
@@ -47,6 +51,18 @@ module.exports = async function handler(req, res) {
       rateLimitDays: getNumberQueryParam(req, "rateLimitDays"),
       batchSize: getNumberQueryParam(req, "batchSize")
     });
+    var finishedAt = new Date();
+
+    await retentionJobRuns.recordRun({
+      jobName: "retention",
+      status: "completed",
+      triggerSource: getTriggerSource(req),
+      requestId: requestContext.requestId,
+      startedAt: startedAt.toISOString(),
+      finishedAt: finishedAt.toISOString(),
+      durationMs: finishedAt.getTime() - startedAt.getTime(),
+      result: result
+    });
 
     observability.logRequestComplete(req, res, {
       route: "internal.retention",
@@ -59,9 +75,35 @@ module.exports = async function handler(req, res) {
     return http.ok(res, {
       ok: true,
       job: "retention",
-      result: result
+      result: result,
+      execution: {
+        requestId: requestContext.requestId,
+        triggerSource: getTriggerSource(req),
+        startedAt: startedAt.toISOString(),
+        finishedAt: finishedAt.toISOString()
+      }
     });
   } catch (error) {
+    var failedAt = new Date();
+
+    try {
+      await retentionJobRuns.recordRun({
+        jobName: "retention",
+        status: "failed",
+        triggerSource: getTriggerSource(req),
+        requestId: requestContext.requestId,
+        startedAt: startedAt.toISOString(),
+        finishedAt: failedAt.toISOString(),
+        durationMs: failedAt.getTime() - startedAt.getTime(),
+        errorMessage: error && error.message ? error.message : "Unknown retention error"
+      });
+    } catch (loggingError) {
+      console.warn("[retention_job_run_log_failed]", {
+        requestId: requestContext.requestId,
+        message: loggingError && loggingError.message ? loggingError.message : "Unknown logging error"
+      });
+    }
+
     observability.logRequestComplete(req, res, {
       route: "internal.retention",
       statusCode: 500
@@ -90,4 +132,18 @@ function getNumberQueryParam(req, name) {
 
   var parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getTriggerSource(req) {
+  var userAgent = String((req.headers && req.headers["user-agent"]) || "").toLowerCase();
+
+  if (userAgent.indexOf("vercel-cron/") !== -1) {
+    return "vercel-cron";
+  }
+
+  if (req.method === "POST") {
+    return "manual-post";
+  }
+
+  return "manual-get";
 }

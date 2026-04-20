@@ -9,6 +9,9 @@ module.exports = async function handler(req, res) {
     return http.methodNotAllowed(res, ["POST"]);
   }
 
+  var requestContext;
+  var currentUserId = null;
+
   try {
     var authContext = await auth.getSessionFromRequest(req);
 
@@ -16,14 +19,16 @@ module.exports = async function handler(req, res) {
       return http.unauthorized(res, "Invalid or missing session.");
     }
 
-    observability.logRequestStart(req, res, {
+    currentUserId = authContext.session.user_id;
+
+    requestContext = observability.logRequestStart(req, res, {
       route: "analyses.create",
-      userId: authContext.session.user_id
+      userId: currentUserId
     });
 
     var limit = await rateLimit.consumeRateLimit({
       scope: "analyses.create.user",
-      subject: authContext.session.user_id,
+      subject: currentUserId,
       windowMs: 60 * 60 * 1000,
       maxRequests: 20
     });
@@ -31,12 +36,12 @@ module.exports = async function handler(req, res) {
     if (!limit.allowed) {
       observability.logSecurityEvent(req, res, "rate_limit_exceeded", {
         route: "analyses.create",
-        userId: authContext.session.user_id,
+        userId: currentUserId,
         requestCount: limit.requestCount
       });
       observability.logRequestComplete(req, res, {
         route: "analyses.create",
-        userId: authContext.session.user_id,
+        userId: currentUserId,
         statusCode: 429
       });
       return http.tooManyRequests(
@@ -52,7 +57,7 @@ module.exports = async function handler(req, res) {
     if (!documentId) {
       observability.logRequestComplete(req, res, {
         route: "analyses.create",
-        userId: authContext.session.user_id,
+        userId: currentUserId,
         statusCode: 400
       });
       return http.badRequest(res, "documentId is required.");
@@ -60,12 +65,13 @@ module.exports = async function handler(req, res) {
 
     var result = await analysis.createAnalysisForDocument({
       documentId: documentId,
-      userId: authContext.session.user_id
+      userId: currentUserId,
+      onEvent: buildAnalysisEventLogger(requestContext, currentUserId, documentId)
     });
 
     observability.logRequestComplete(req, res, {
       route: "analyses.create",
-      userId: authContext.session.user_id,
+      userId: currentUserId,
       statusCode: 201,
       documentId: documentId,
       analysisId: result && result.analysis ? result.analysis.id : null
@@ -75,6 +81,7 @@ module.exports = async function handler(req, res) {
     if (error && error.message === "Invalid JSON body.") {
       observability.logRequestComplete(req, res, {
         route: "analyses.create",
+        userId: currentUserId,
         statusCode: 400
       });
       return http.badRequest(res, error.message);
@@ -83,6 +90,7 @@ module.exports = async function handler(req, res) {
     if (error && error.message === "Document not found.") {
       observability.logRequestComplete(req, res, {
         route: "analyses.create",
+        userId: currentUserId,
         statusCode: 400
       });
       return http.badRequest(res, error.message);
@@ -103,15 +111,42 @@ module.exports = async function handler(req, res) {
     if (error && error.message === "Analysis already in progress for this document.") {
       observability.logRequestComplete(req, res, {
         route: "analyses.create",
+        userId: currentUserId,
         statusCode: 409
       });
       return http.conflict(res, error.message);
     }
 
+    observability.logAppError("analyses.create_failed", error, {
+      route: "analyses.create",
+      requestId: requestContext && requestContext.requestId,
+      userId: currentUserId
+    });
     observability.logRequestComplete(req, res, {
       route: "analyses.create",
+      userId: currentUserId,
       statusCode: 500
     });
     return http.internalError(res, error);
   }
 };
+
+function buildAnalysisEventLogger(requestContext, userId, documentId) {
+  return function onEvent(eventName, payload) {
+    observability.logAppEvent(
+      eventName === "analysis_failed" ? "error" :
+      eventName === "claude_attempt_fallback" ? "warn" :
+      "info",
+      eventName,
+      Object.assign(
+        {
+          route: "analyses.create",
+          requestId: requestContext && requestContext.requestId,
+          userId: userId,
+          documentId: documentId
+        },
+        payload || {}
+      )
+    );
+  };
+}

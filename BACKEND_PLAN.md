@@ -12,7 +12,7 @@ O projeto saiu do estado frontend-only e ja possui backend operacional em produc
 - dashboard alimentado por APIs base, secoes reais e navegacao mobile refinada
 - healthcheck operacional
 
-Ainda faltam refinamentos para fechar o ciclo de producao, principalmente em operabilidade, revisao de seguranca e refinamentos finais de UX no dashboard.
+O backend e o dashboard ja cobrem o ciclo principal de producao, com operabilidade e UX essencial conectadas aos dados reais.
 
 ## Arquitetura Atual
 
@@ -62,6 +62,15 @@ Implementado:
 - healthcheck com diagnostico de storage
 - fallback automatico de modelo Claude quando o alias configurado nao existe mais
 - `CRON_SECRET` configurado e refletido no `api/health`
+- ultima execucao do job de retencao exposta no `api/health`
+- pipeline de analise com logs estruturados para tentativas, fallback e falhas
+- rotas autenticadas sensiveis com validacao de UUID e request logging consistente
+- resumo recente de analises e ultima falha expostos no `api/health`
+- dashboard com loading inicial mais claro e resiliencia a falhas parciais nas APIs de overview
+- overview com comparativo mais profundo por janela filtrada, faixa de score e ritmo de conclusao
+- activity feed com resumo visual coerente com busca, filtros e auditoria
+- configuracoes com resumo de uso real e saude recente das analises
+- exclusao em lote com resumo de selecao e lixeira temporaria mais clara
 
 ## Modulos
 
@@ -122,14 +131,10 @@ Responsabilidades:
 
 ## Proximos Passos Recomendados
 
-1. Adicionar uma validacao operacional simples para o job de retencao
-2. Consolidar monitoramento de erro e execucao em producao
-3. Melhorar estados de carregamento e resiliencia das acoes do dashboard
-4. Refinar o dashboard com historico comparativo mais profundo e cortes por periodo
-5. Revisar refinamentos finais de UX com foco em activity feed, perfil de uso e fluxos de exclusao em lote
+1. Validar manualmente os fluxos do dashboard em producao com massa real e ajustar microcopy se necessario
 
 ## Riscos Abertos
 
-- a UX final do dashboard ainda precisa refletir todos os dados reais das APIs
-- o dashboard ainda pode evoluir com filtros temporais e historico comparativo por periodo
+- a validacao final ainda depende de teste manual em navegador com dados reais
+- o dashboard ainda pode evoluir com exportacoes mais profundas e comparativos historicos adicionais
 - a auditoria ja possui tela dedicada de historico com filtros por evento e documento

@@ -24,6 +24,7 @@
 
 - `Fase 7`: em andamento
   - observabilidade, rate limiting e retencao automatica em evolucao
+  - validacao operacional do job de retencao adicionada ao healthcheck
 
 ## Fase 1 - Fundacao
 
@@ -203,6 +204,11 @@ Status:
 - [x] trilha de auditoria para trash, restore e purge de documentos
 - [x] atividade recente do dashboard enriquecida com eventos de auditoria
 - [x] tela dedicada de historico/auditoria com filtros por evento e documento
+- [x] loading inicial e degradacao parcial mais clara quando APIs do dashboard falham
+- [x] comparativo do overview aprofundado com janela filtrada e faixa observada de score
+- [x] activity feed com resumo visual ligado aos filtros atuais
+- [x] configuracoes com resumo real de uso e saude recente das analises
+- [x] exclusao em lote com resumo de selecao e estado da lixeira temporaria
 
 ## Fase 7 - Producao
 
@@ -220,7 +226,7 @@ Deixar o produto pronto para uso publico.
 
 ### Entregaveis
 
-- [ ] revisao de seguranca
+- [x] revisao de seguranca
 - [ ] politica de retencao completamente validada
 - [x] observabilidade minima
 
@@ -233,6 +239,10 @@ Status:
 - [x] limpeza automatica de documentos, sessoes e rate limits implementada
 - [x] `CRON_SECRET` e janelas de retencao configurados na Vercel
 - [x] `api/health` com checks operacionais de storage, cron e rate limiting
+- [x] `api/health` com estado da ultima execucao do job de retencao
+- [x] `api/health` com resumo operacional recente das analises e ultima falha conhecida
 - [x] primeiro pacote de endurecimento de seguranca em auth e rota interna
 - [x] segundo pacote de endurecimento em upload, storage e disparo de analises
 - [x] resiliencia da integracao Claude contra modelo configurado invalido/descontinuado
+- [x] logs estruturados do pipeline de analise com request ID, fallback e falha
+- [x] validacao de UUID e trilha operacional nas rotas autenticadas mais sensiveis

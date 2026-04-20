@@ -200,6 +200,7 @@ Status:
 - [x] desfazer exclusao com janela curta antes do delete definitivo
 - [x] filtros temporais no dashboard por 7/30/90 dias e mes atual
 - [x] lixeira temporaria server-side com restore de documentos
+- [x] trilha de auditoria para trash, restore e purge de documentos
 
 ## Fase 7 - Producao
 

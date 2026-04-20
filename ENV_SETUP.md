@@ -350,3 +350,11 @@ O ambiente de producao ja confirma:
 - `retentionWindowsConfigured: true`
 
 Entao `CRON_SECRET` nao esta mais pendente no projeto publicado.
+
+## Auditoria de Documentos
+
+Com a migration `004_document_audit_log.sql` aplicada, o backend registra eventos de:
+
+- envio para lixeira
+- restauracao
+- purge automatico pela retencao

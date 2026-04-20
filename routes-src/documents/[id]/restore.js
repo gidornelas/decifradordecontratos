@@ -1,5 +1,6 @@
 var http = require("../../../lib/http");
 var auth = require("../../../lib/auth");
+var audit = require("../../../lib/document-audit");
 var documents = require("../../../lib/documents");
 
 module.exports = async function handler(req, res) {
@@ -36,6 +37,17 @@ module.exports = async function handler(req, res) {
     if (!restored) {
       return http.badRequest(res, "Trash window expired for this document.");
     }
+
+    await audit.appendEvent({
+      documentId: documentId,
+      userId: authContext.session.user_id,
+      actorUserId: authContext.session.user_id,
+      eventName: "restore",
+      metadata: {
+        originalName: deletedDocument.original_name || null,
+        deletedAt: deletedDocument.deleted_at || null
+      }
+    });
 
     return http.ok(res, {
       restored: true

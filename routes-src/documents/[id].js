@@ -1,5 +1,6 @@
 var http = require("../../lib/http");
 var auth = require("../../lib/auth");
+var audit = require("../../lib/document-audit");
 var documents = require("../../lib/documents");
 var env = require("../../lib/env");
 
@@ -78,6 +79,17 @@ async function deleteDocument(req, res) {
     if (!deletedDocument) {
       return http.badRequest(res, "Document not found.");
     }
+
+    await audit.appendEvent({
+      documentId: documentId,
+      userId: authContext.session.user_id,
+      actorUserId: authContext.session.user_id,
+      eventName: "trash",
+      metadata: {
+        originalName: documentItem.original_name || null,
+        purgeAfterAt: deletedDocument.purge_after_at
+      }
+    });
 
     return http.ok(res, {
       deleted: true,

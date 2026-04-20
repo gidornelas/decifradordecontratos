@@ -35,6 +35,10 @@
       "destination": "/api/documents?action=status&id=:id"
     },
     {
+      "source": "/api/documents/:id/restore",
+      "destination": "/api/documents?action=restore&id=:id"
+    },
+    {
       "source": "/api/documents/:id",
       "destination": "/api/documents?action=detail&id=:id"
     },

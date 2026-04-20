@@ -19,7 +19,8 @@ module.exports = async function handler(req, res) {
         "select severity, count(*)::int as count",
         "from analysis_risks r",
         "join analyses a on a.id = r.analysis_id",
-        "where a.user_id = $1",
+        "join documents d on d.id = a.document_id",
+        "where a.user_id = $1 and d.deleted_at is null",
         "group by severity"
       ].join(" "),
       [authContext.session.user_id]

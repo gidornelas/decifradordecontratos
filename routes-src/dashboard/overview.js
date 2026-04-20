@@ -18,13 +18,19 @@ module.exports = async function handler(req, res) {
     var countsResult = await db.query(
       [
         "select",
-        "(select count(*)::int from documents where user_id = $1) as total_documents,",
-        "(select count(*)::int from analyses where user_id = $1 and status = 'completed') as completed_analyses,",
+        "(select count(*)::int from documents where user_id = $1 and deleted_at is null) as total_documents,",
+        "(",
+        "select count(*)::int",
+        "from analyses a",
+        "join documents d on d.id = a.document_id",
+        "where a.user_id = $1 and a.status = 'completed' and d.deleted_at is null",
+        ") as completed_analyses,",
         "(",
         "select count(*)::int",
         "from analysis_risks r",
         "join analyses a on a.id = r.analysis_id",
-        "where a.user_id = $1 and r.severity = 'critical'",
+        "join documents d on d.id = a.document_id",
+        "where a.user_id = $1 and r.severity = 'critical' and d.deleted_at is null",
         ") as critical_risks"
       ].join(" "),
       [userId]
@@ -34,7 +40,7 @@ module.exports = async function handler(req, res) {
       [
         "select id, original_name, mime_type, extension, size_bytes, processing_status, created_at",
         "from documents",
-        "where user_id = $1",
+        "where user_id = $1 and deleted_at is null",
         "order by created_at desc",
         "limit 5"
       ].join(" "),

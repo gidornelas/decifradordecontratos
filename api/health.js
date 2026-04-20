@@ -28,6 +28,7 @@ module.exports = async function handler(req, res) {
     var storageStatus = storage.getStorageConfigStatus();
     var retentionWindows = {
       documentDays: normalizePositiveNumber(serverEnv.retentionDocumentDays),
+      trashDays: normalizePositiveNumber(serverEnv.trashRetentionDays),
       sessionDays: normalizePositiveNumber(serverEnv.retentionSessionDays),
       rateLimitDays: normalizePositiveNumber(serverEnv.retentionRateLimitDays)
     };
@@ -57,6 +58,7 @@ module.exports = async function handler(req, res) {
         ),
         retentionWindowsConfigured: Boolean(
           retentionWindows.documentDays &&
+            retentionWindows.trashDays &&
             retentionWindows.sessionDays &&
             retentionWindows.rateLimitDays
         ),

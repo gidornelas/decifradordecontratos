@@ -281,6 +281,7 @@
     deletingDocumentIds = {};
     isBulkDeletingDocuments = false;
     pendingDeletionBatch = null;
+    clearPendingDeletionStorage();
     settingsLoaded = false;
     setSettingsFeedback("", "");
     setResultsFeedback("", "");
@@ -546,6 +547,105 @@
   function restorePendingDocuments(documents) {
     currentDocuments = sortDocumentsByNewest(currentDocuments.concat(Array.isArray(documents) ? documents : []));
     syncDocumentViews(currentDocuments);
+  }
+
+  function getPendingDeletionStorageKey() {
+    var userId = currentUser && currentUser.id ? currentUser.id : "anonymous";
+    return "dc-pending-delete:" + userId;
+  }
+
+  function clearPendingDeletionStorage() {
+    try {
+      window.localStorage.removeItem(getPendingDeletionStorageKey());
+    } catch (error) {
+      // Ignore storage access failures.
+    }
+  }
+
+  function persistPendingDeletionBatch() {
+    if (!pendingDeletionBatch) {
+      clearPendingDeletionStorage();
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        getPendingDeletionStorageKey(),
+        JSON.stringify({
+          documentIds: pendingDeletionBatch.documentIds,
+          documentNames: pendingDeletionBatch.documentNames,
+          expiresAt: pendingDeletionBatch.expiresAt
+        })
+      );
+    } catch (error) {
+      // Ignore storage access failures.
+    }
+  }
+
+  function schedulePendingDeletionFeedbackExpiry() {
+    if (!pendingDeletionBatch) {
+      return;
+    }
+
+    if (pendingDeletionBatch.timerId) {
+      window.clearTimeout(pendingDeletionBatch.timerId);
+    }
+
+    var remainingMs = Math.max(0, pendingDeletionBatch.expiresAt - Date.now());
+    pendingDeletionBatch.timerId = window.setTimeout(function () {
+      pendingDeletionBatch = null;
+      clearPendingDeletionStorage();
+      setDocumentsFeedback("", "");
+    }, remainingMs);
+  }
+
+  function hydratePendingDeletionBatch() {
+    var raw;
+    var parsed;
+
+    if (!currentUser || !currentUser.id) {
+      return;
+    }
+
+    try {
+      raw = window.localStorage.getItem(getPendingDeletionStorageKey());
+    } catch (error) {
+      raw = "";
+    }
+
+    if (!raw) {
+      return;
+    }
+
+    try {
+      parsed = JSON.parse(raw);
+    } catch (error) {
+      clearPendingDeletionStorage();
+      return;
+    }
+
+    if (!parsed || !Array.isArray(parsed.documentIds) || !parsed.documentIds.length || !parsed.expiresAt || parsed.expiresAt <= Date.now()) {
+      pendingDeletionBatch = null;
+      clearPendingDeletionStorage();
+      return;
+    }
+
+    pendingDeletionBatch = {
+      documentIds: parsed.documentIds.slice(),
+      documentNames: Array.isArray(parsed.documentNames) ? parsed.documentNames.slice() : [],
+      expiresAt: Number(parsed.expiresAt),
+      timerId: null
+    };
+
+    schedulePendingDeletionFeedbackExpiry();
+    setDocumentsUndoFeedback(
+      parsed.documentIds.length === 1
+        ? '"' + (pendingDeletionBatch.documentNames[0] || "documento") + '" esta na lixeira temporaria. Voce ainda pode desfazer.'
+        : pendingDeletionBatch.documentIds.length + " documentos estao na lixeira temporaria. Voce ainda pode desfazer.",
+      function () {
+        undoPendingDeletionBatch();
+      }
+    );
   }
 
   function setActionLoading(button, isLoading, loadingLabel, idleLabel) {
@@ -2913,6 +3013,7 @@
       await hydrateDocumentSeverityCache(currentDocuments);
       applySearchFilter();
       await loadOverviewData();
+      hydratePendingDeletionBatch();
 
       if (!currentDocuments.length) {
         renderAnalysisEmptyState(
@@ -3315,8 +3416,10 @@ function readFilePayload(file) {
     }
   }
 
-  function undoPendingDeletionBatch() {
+  async function undoPendingDeletionBatch() {
     var batch = pendingDeletionBatch;
+    var restoredCount = 0;
+    var failures = [];
 
     if (!batch) {
       return;
@@ -3327,79 +3430,48 @@ function readFilePayload(file) {
     }
 
     pendingDeletionBatch = null;
-    restorePendingDocuments(batch.documents);
+    clearPendingDeletionStorage();
+    setDocumentsFeedback("Restaurando documento(s) da lixeira...", "info");
+
+    for (var index = 0; index < batch.documentIds.length; index += 1) {
+      try {
+        await requestJson("/api/documents/" + encodeURIComponent(batch.documentIds[index]) + "/restore", {
+          method: "POST"
+        });
+        restoredCount += 1;
+      } catch (error) {
+        failures.push(error && error.message ? error.message : "Falha ao restaurar um documento.");
+      }
+    }
+
+    await loadDocuments();
+
+    if (failures.length) {
+      setDocumentsFeedback(
+        restoredCount > 0
+          ? restoredCount + " documento" + (restoredCount > 1 ? "s foram" : " foi") + " restaurado" + (restoredCount > 1 ? "s" : "") + ", mas ainda houve " + failures.length + " falha" + (failures.length > 1 ? "s" : "") + ". " + failures[0]
+          : "Nao foi possivel desfazer a exclusao agora. " + failures[0],
+        restoredCount > 0 ? "info" : "error"
+      );
+      return;
+    }
+
     setDocumentsFeedback(
-      batch.documents.length === 1
-        ? '"' + (batch.documents[0].original_name || "documento") + '" voltou para o painel.'
-        : "A exclusao pendente foi desfeita e os documentos voltaram para o painel.",
+      restoredCount === 1
+        ? '"' + (batch.documentNames[0] || "documento") + '" voltou para o painel.'
+        : "Os documentos voltaram da lixeira temporaria para o painel.",
       "success"
     );
   }
 
-  async function commitPendingDeletionBatch() {
-    var batch = pendingDeletionBatch;
-    var successCount = 0;
-    var failures = [];
-    var firstDeletedName = "";
-
-    if (!batch) {
-      return;
-    }
-
-    pendingDeletionBatch = null;
-    isBulkDeletingDocuments = batch.documentIds.length > 1;
-    batch.documentIds.forEach(function (documentId) {
-      deletingDocumentIds[documentId] = true;
-    });
-    applySearchFilter();
-    setDocumentsFeedback("Excluindo documentos no banco...", "info");
-
-    try {
-      for (var index = 0; index < batch.documentIds.length; index += 1) {
-        var documentId = batch.documentIds[index];
-
-        try {
-          await performDocumentDeletion(documentId);
-          successCount += 1;
-          if (!firstDeletedName) {
-            firstDeletedName = (batch.documents[index] && batch.documents[index].original_name) || "";
-          }
-        } catch (error) {
-          failures.push(error && error.message ? error.message : "Falha ao excluir um documento.");
-        }
-      }
-
-      await loadDocuments();
-
-      if (failures.length) {
-        setDocumentsFeedback(
-          successCount > 0
-            ? successCount + " documento" + (successCount > 1 ? "s foram" : " foi") + " excluido" + (successCount > 1 ? "s" : "") + ", mas ainda houve " + failures.length + " falha" + (failures.length > 1 ? "s" : "") + ". " + failures[0]
-            : "Nao foi possivel excluir os documentos selecionados agora. " + failures[0],
-          successCount > 0 ? "info" : "error"
-        );
-        return;
-      }
-
-      setDocumentsFeedback(
-        successCount === 1 && firstDeletedName
-          ? '"' + firstDeletedName + '" foi excluido do painel e do banco.'
-          : successCount + " documentos foram excluidos do painel e do banco.",
-        "success"
-      );
-    } finally {
-      isBulkDeletingDocuments = false;
-      deletingDocumentIds = {};
-      applySearchFilter();
-    }
-  }
-
-  function scheduleDeletionBatch(documentIds, options) {
+  async function scheduleDeletionBatch(documentIds, options) {
     var config = options || {};
     var uniqueIds = [];
     var documentsToDelete = [];
     var label;
     var feedbackMessage;
+    var failures = [];
+    var successIds = [];
 
     if (pendingDeletionBatch) {
       setDocumentsFeedback("Finalize ou desfaça a exclusao pendente antes de iniciar outra.", "info");
@@ -3425,11 +3497,46 @@ function readFilePayload(file) {
       return null;
     }
 
-    currentDocuments = currentDocuments.filter(function (documentItem) {
-      return uniqueIds.indexOf(documentItem.id) === -1;
+    isBulkDeletingDocuments = uniqueIds.length > 1;
+    uniqueIds.forEach(function (documentId) {
+      deletingDocumentIds[documentId] = true;
+    });
+    applySearchFilter();
+
+    try {
+      for (var index = 0; index < uniqueIds.length; index += 1) {
+        var documentId = uniqueIds[index];
+
+        try {
+          await requestJson("/api/documents/" + encodeURIComponent(documentId), {
+            method: "DELETE"
+          });
+          successIds.push(documentId);
+        } catch (error) {
+          failures.push(error && error.message ? error.message : "Falha ao enviar um documento para a lixeira.");
+        } finally {
+          delete deletingDocumentIds[documentId];
+        }
+      }
+    } finally {
+      isBulkDeletingDocuments = false;
+      applySearchFilter();
+    }
+
+    if (!successIds.length) {
+      setDocumentsFeedback("Nao foi possivel mover os documentos para a lixeira agora. " + (failures[0] || ""), "error");
+      return null;
+    }
+
+    documentsToDelete = documentsToDelete.filter(function (documentItem) {
+      return successIds.indexOf(documentItem.id) !== -1;
     });
 
-    uniqueIds.forEach(function (documentId) {
+    currentDocuments = currentDocuments.filter(function (documentItem) {
+      return successIds.indexOf(documentItem.id) === -1;
+    });
+
+    successIds.forEach(function (documentId) {
       delete selectedDocumentIds[documentId];
       if (currentDocumentId === documentId) {
         currentDocumentId = "";
@@ -3439,12 +3546,15 @@ function readFilePayload(file) {
     syncDocumentViews(currentDocuments);
 
     pendingDeletionBatch = {
-      documentIds: uniqueIds,
-      documents: documentsToDelete,
-      timerId: window.setTimeout(function () {
-        commitPendingDeletionBatch();
-      }, pendingDeletionWindowMs)
+      documentIds: successIds,
+      documentNames: documentsToDelete.map(function (documentItem) {
+        return documentItem.original_name || "documento";
+      }),
+      expiresAt: Date.now() + pendingDeletionWindowMs,
+      timerId: null
     };
+    persistPendingDeletionBatch();
+    schedulePendingDeletionFeedbackExpiry();
 
     feedbackMessage = documentsToDelete.length === 1
       ? label + " saiu do painel. Desfaca em alguns segundos se foi engano."
@@ -3454,8 +3564,14 @@ function readFilePayload(file) {
       undoPendingDeletionBatch();
     });
 
+    if (failures.length) {
+      setDocumentsUndoFeedback(feedbackMessage + " Algumas exclusoes falharam: " + failures[0], function () {
+        undoPendingDeletionBatch();
+      });
+    }
+
     return {
-      documentIds: uniqueIds
+      documentIds: successIds
     };
   }
 

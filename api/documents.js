@@ -5,7 +5,8 @@ var handlers = {
   detail: require("../routes-src/documents/[id]"),
   file: require("../routes-src/documents/[id]/file"),
   analysis: require("../routes-src/documents/[id]/analysis"),
-  status: require("../routes-src/documents/[id]/status")
+  status: require("../routes-src/documents/[id]/status"),
+  restore: require("../routes-src/documents/[id]/restore")
 };
 
 module.exports = async function handler(req, res) {

@@ -201,6 +201,7 @@ Status:
 - [x] filtros temporais no dashboard por 7/30/90 dias e mes atual
 - [x] lixeira temporaria server-side com restore de documentos
 - [x] trilha de auditoria para trash, restore e purge de documentos
+- [x] atividade recente do dashboard enriquecida com eventos de auditoria
 
 ## Fase 7 - Producao
 

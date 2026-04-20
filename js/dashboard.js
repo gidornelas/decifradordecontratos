@@ -1516,6 +1516,68 @@
       "</button>";
   }
 
+  function mergeOverviewActivityItems(primaryItems, secondaryItems, limit) {
+    return (Array.isArray(primaryItems) ? primaryItems : [])
+      .concat(Array.isArray(secondaryItems) ? secondaryItems : [])
+      .sort(function (left, right) {
+        var leftTime = new Date(left && left.timestamp || 0).getTime();
+        var rightTime = new Date(right && right.timestamp || 0).getTime();
+        return rightTime - leftTime;
+      })
+      .slice(0, typeof limit === "number" ? limit : 6);
+  }
+
+  function buildAuditActivityItems(events) {
+    return (Array.isArray(events) ? events : []).map(function (eventItem) {
+      var metadata = eventItem && eventItem.metadata ? eventItem.metadata : {};
+      var originalName = metadata.originalName || "documento";
+      var extension = getFileExtension(originalName);
+      var typeKey = extension === "doc" ? "docx" : extension;
+      var eventName = String(eventItem && eventItem.event_name || "").toLowerCase();
+      var baseItem = {
+        documentId: eventItem && eventItem.document_id ? eventItem.document_id : "",
+        timeLabel: formatRelativeDate(eventItem && eventItem.created_at),
+        timestamp: eventItem && eventItem.created_at ? eventItem.created_at : null,
+        searchText: originalName + " " + eventName,
+        statusKey: "all",
+        typeKey: typeKey || "all",
+        severityKey: "unknown",
+        actionMarkup: ""
+      };
+
+      if (eventName === "trash") {
+        return Object.assign(baseItem, {
+          dotClass: "activity-dot--warn",
+          html: "<strong>" + escapeHtml(originalName) + "</strong> foi para a lixeira temporaria",
+          actionMarkup: buildActivityAction("Ver documentos", "documents")
+        });
+      }
+
+      if (eventName === "restore") {
+        return Object.assign(baseItem, {
+          dotClass: "activity-dot--safe",
+          html: "<strong>" + escapeHtml(originalName) + "</strong> foi restaurado para o painel",
+          actionMarkup: baseItem.documentId
+            ? buildActivityAction("Abrir", "documents", baseItem.documentId, "documents")
+            : buildActivityAction("Ver documentos", "documents")
+        });
+      }
+
+      if (eventName === "purge") {
+        return Object.assign(baseItem, {
+          dotClass: "activity-dot--default",
+          html: "<strong>" + escapeHtml(originalName) + "</strong> foi removido automaticamente da lixeira",
+          actionMarkup: buildActivityAction("Analisar contrato", "analyze")
+        });
+      }
+
+      return Object.assign(baseItem, {
+        dotClass: "activity-dot--default",
+        html: "<strong>" + escapeHtml(originalName) + "</strong> teve uma atualizacao registrada"
+      });
+    });
+  }
+
   function normalizeComparisonTypeLabel(label) {
     var normalized = String(label || "").trim();
     return normalized || "Contrato sem tipo definido";
@@ -2186,19 +2248,23 @@
     try {
       var responses = await Promise.all([
         requestJson("/api/dashboard/overview", { method: "GET" }),
-        requestJson("/api/dashboard/risk-distribution", { method: "GET" })
+        requestJson("/api/dashboard/risk-distribution", { method: "GET" }),
+        requestJson("/api/dashboard/audit-activity", { method: "GET" })
       ]);
       var overviewData = responses[0] || {};
       var riskData = responses[1] || {};
+      var auditData = responses[2] || {};
       var recentDocuments = Array.isArray(overviewData.recentDocuments)
         ? overviewData.recentDocuments
         : currentDocuments.slice(0, 5);
       var activityItems;
+      var auditItems;
 
       renderOverviewKpis(overviewData.kpis || {}, riskData.distribution || {});
       activityItems = await buildOverviewActivityFiltered(recentDocuments);
-      overviewActivityItems = activityItems;
-      renderOverviewActivity(filterOverviewActivityItems(activityItems));
+      auditItems = buildAuditActivityItems(auditData.events || []);
+      overviewActivityItems = mergeOverviewActivityItems(activityItems, auditItems, 6);
+      renderOverviewActivity(filterOverviewActivityItems(overviewActivityItems));
       refreshOverviewComparisons(filterDocuments(currentDocuments));
     } catch (error) {
       renderOverviewKpis({}, { critical: 0, attention: 0, safe: 0 });

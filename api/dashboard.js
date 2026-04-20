@@ -3,7 +3,8 @@ var http = require("../lib/http");
 var handlers = {
   overview: require("../routes-src/dashboard/overview"),
   recentDocuments: require("../routes-src/dashboard/recent-documents"),
-  riskDistribution: require("../routes-src/dashboard/risk-distribution")
+  riskDistribution: require("../routes-src/dashboard/risk-distribution"),
+  auditActivity: require("../routes-src/dashboard/audit-activity")
 };
 
 module.exports = async function handler(req, res) {

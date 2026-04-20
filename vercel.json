@@ -79,6 +79,10 @@
       "destination": "/api/dashboard?action=riskDistribution"
     },
     {
+      "source": "/api/dashboard/audit-activity",
+      "destination": "/api/dashboard?action=auditActivity"
+    },
+    {
       "source": "/api/users/me",
       "destination": "/api/users?action=me"
     }

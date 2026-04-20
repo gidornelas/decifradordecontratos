@@ -218,6 +218,10 @@ input,select,textarea{font-family:inherit}
 .activity-text{font-size:13.5px;color:var(--text-2);line-height:1.5}
 .activity-time{font-size:12px;color:var(--neutral-2);margin-top:2px}
 
+/* HISTORICO */
+.history-layout{display:grid;gap:16px}
+.history-note{font-size:14px;color:var(--neutral);line-height:1.7;max-width:720px}
+
 /* â”€â”€ OVERVIEW GRID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .overview-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}

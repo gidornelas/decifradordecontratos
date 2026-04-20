@@ -77,6 +77,10 @@
         <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
         Documentos
       </button>
+      <button class="nav-item" data-page="history">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Histórico
+      </button>
       <div class="nav-divider"></div>
       <div class="nav-section-label">Análise</div>
       <button class="nav-item" data-page="analyze">
@@ -203,6 +207,10 @@
     <button class="mobile-shortcut" data-nav="results" type="button">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Resultados
+    </button>
+    <button class="mobile-shortcut" data-nav="history" type="button">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Histórico
     </button>
   </div>
 
@@ -751,6 +759,33 @@
         <div class="verdict">
           <div class="verdict-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
           <div><div class="verdict-title">Não assine sem negociar</div><p class="verdict-text">Este contrato contém <strong>3 cláusulas de risco crítico</strong>. Recomendamos negociar as cláusulas 4.2, 8.3 e 5.1 antes de assinar. Após a negociação, o contrato pode ser considerado seguro.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORICO -->
+    <div class="page" id="page-history" data-screen-label="Histórico">
+      <div class="page-head">
+        <h2 class="page-title">Histórico de Auditoria</h2>
+        <div class="page-actions">
+          <select class="app-select" id="audit-event-filter" title="Filtrar por evento">
+            <option value="all">Todos os eventos</option>
+            <option value="trash">Enviado à lixeira</option>
+            <option value="restore">Restaurado</option>
+            <option value="purge">Removido da lixeira</option>
+          </select>
+        </div>
+      </div>
+      <div class="history-layout">
+        <div class="card">
+          <div class="section-subtitle">Como filtrar</div>
+          <p class="history-note">Use a busca do topo para encontrar um documento específico e combine com o filtro de evento para auditar exclusões, restaurações e limpezas automáticas.</p>
+        </div>
+        <div class="card">
+          <div class="section-subtitle">Linha do tempo</div>
+          <div id="history-activity-list">
+            <div class="table-empty">Carregando histórico de auditoria...</div>
+          </div>
         </div>
       </div>
     </div>

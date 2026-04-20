@@ -202,6 +202,7 @@ Status:
 - [x] lixeira temporaria server-side com restore de documentos
 - [x] trilha de auditoria para trash, restore e purge de documentos
 - [x] atividade recente do dashboard enriquecida com eventos de auditoria
+- [x] tela dedicada de historico/auditoria com filtros por evento e documento
 
 ## Fase 7 - Producao
 

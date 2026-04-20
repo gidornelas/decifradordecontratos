@@ -132,4 +132,4 @@ Responsabilidades:
 
 - a UX final do dashboard ainda precisa refletir todos os dados reais das APIs
 - o dashboard ainda pode evoluir com filtros temporais e historico comparativo por periodo
-- a auditoria ja alimenta a atividade recente, mas ainda pode ganhar uma tela dedicada de historico
+- a auditoria ja possui tela dedicada de historico com filtros por evento e documento

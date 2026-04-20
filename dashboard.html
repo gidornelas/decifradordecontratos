@@ -170,6 +170,13 @@
         <option value="safe">Seguro</option>
         <option value="unknown">Sem análise</option>
       </select>
+      <select class="app-select" id="dashboard-filter-period" title="Filtrar por período">
+        <option value="all">Todo o período</option>
+        <option value="7d">Últimos 7 dias</option>
+        <option value="30d">Últimos 30 dias</option>
+        <option value="90d">Últimos 90 dias</option>
+        <option value="month">Este mês</option>
+      </select>
       <button class="topbar-btn" title="Notificações">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="notif-dot"></span>
@@ -329,7 +336,14 @@
           </button>
         </div>
       </div>
-      <div class="inline-feedback" id="documents-feedback" hidden></div>
+      <div class="inline-feedback" id="documents-feedback" hidden>
+        <div class="inline-feedback__row">
+          <span id="documents-feedback-text"></span>
+          <button class="inline-feedback__action" id="documents-feedback-undo-btn" type="button" hidden>
+            Desfazer
+          </button>
+        </div>
+      </div>
       <div class="table table--selectable" id="documents-table">
         <div class="table-head"><span></span><span>Documento</span><span>Tipo</span><span>Data</span><span>Status</span><span></span></div>
         <div class="table-row">

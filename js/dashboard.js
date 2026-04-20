@@ -23,6 +23,7 @@
   var dashboardFilterStatus = document.getElementById("dashboard-filter-status");
   var dashboardFilterType = document.getElementById("dashboard-filter-type");
   var dashboardFilterSeverity = document.getElementById("dashboard-filter-severity");
+  var dashboardFilterPeriod = document.getElementById("dashboard-filter-period");
   var userNameEl = document.querySelector(".user-name");
   var userEmailEl = document.querySelector(".user-email");
   var userAvatarEl = document.querySelector(".user-avatar");
@@ -47,6 +48,8 @@
   var documentsClearSelectionBtn = document.getElementById("documents-clear-selection-btn");
   var documentsBulkDeleteBtn = document.getElementById("documents-bulk-delete-btn");
   var documentsFeedback = document.getElementById("documents-feedback");
+  var documentsFeedbackText = document.getElementById("documents-feedback-text");
+  var documentsFeedbackUndoBtn = document.getElementById("documents-feedback-undo-btn");
   var documentsTable = document.getElementById("documents-table");
   var uploadZone = document.getElementById("upload-zone");
   var fileInput = document.getElementById("file-input");
@@ -86,10 +89,12 @@
   var currentStatusFilter = "all";
   var currentTypeFilter = "all";
   var currentSeverityFilter = "all";
+  var currentPeriodFilter = "all";
   var documentSeverityCache = {};
   var selectedDocumentIds = {};
   var deletingDocumentIds = {};
   var isBulkDeletingDocuments = false;
+  var pendingDeletionBatch = null;
   var currentDocumentId = "";
   var currentUser = null;
   var currentRiskFilter = "all";
@@ -98,6 +103,7 @@
   var mobileNavBreakpoint = window.matchMedia("(max-width: 980px)");
   var resultsFeedbackTimer = null;
   var documentsFeedbackTimer = null;
+  var pendingDeletionWindowMs = 6000;
   var sessionHandlingInFlight = false;
   var overviewComparisonToken = 0;
   var pageTitles = {
@@ -258,6 +264,9 @@
   }
 
   function resetClientState() {
+    if (pendingDeletionBatch && pendingDeletionBatch.timerId) {
+      window.clearTimeout(pendingDeletionBatch.timerId);
+    }
     analysisCache = {};
     overviewActivityCache = {};
     currentDocuments = [];
@@ -266,10 +275,12 @@
     currentStatusFilter = "all";
     currentTypeFilter = "all";
     currentSeverityFilter = "all";
+    currentPeriodFilter = "all";
     documentSeverityCache = {};
     selectedDocumentIds = {};
     deletingDocumentIds = {};
     isBulkDeletingDocuments = false;
+    pendingDeletionBatch = null;
     settingsLoaded = false;
     setSettingsFeedback("", "");
     setResultsFeedback("", "");
@@ -287,6 +298,9 @@
     }
     if (dashboardFilterSeverity) {
       dashboardFilterSeverity.value = "all";
+    }
+    if (dashboardFilterPeriod) {
+      dashboardFilterPeriod.value = "all";
     }
 
     syncDocumentViews([]);
@@ -407,13 +421,25 @@
 
     if (!message) {
       element.hidden = true;
-      element.textContent = "";
+      if (documentsFeedbackText && element === documentsFeedback) {
+        documentsFeedbackText.textContent = "";
+      } else {
+        element.textContent = "";
+      }
       element.removeAttribute("data-tone");
+      if (documentsFeedbackUndoBtn && element === documentsFeedback) {
+        documentsFeedbackUndoBtn.hidden = true;
+        documentsFeedbackUndoBtn.onclick = null;
+      }
       return;
     }
 
     element.hidden = false;
-    element.textContent = message;
+    if (documentsFeedbackText && element === documentsFeedback) {
+      documentsFeedbackText.textContent = message;
+    } else {
+      element.textContent = message;
+    }
     element.setAttribute("data-tone", tone || "info");
 
     if (tone !== "error" && timerName === "documents") {
@@ -425,6 +451,18 @@
 
   function setDocumentsFeedback(message, tone) {
     setInlineFeedback(documentsFeedback, "documents", message, tone);
+  }
+
+  function setDocumentsUndoFeedback(message, onUndo) {
+    setDocumentsFeedback(message, "info");
+    if (documentsFeedbackUndoBtn) {
+      documentsFeedbackUndoBtn.hidden = false;
+      documentsFeedbackUndoBtn.onclick = function () {
+        if (typeof onUndo === "function") {
+          onUndo();
+        }
+      };
+    }
   }
 
   function getSelectedDocumentIds() {
@@ -487,6 +525,27 @@
         ? "Excluir selecionados (" + selectedCount + ")"
         : "Excluir selecionados";
     }
+  }
+
+  function hasPendingDeletionForDocument(documentId) {
+    return Boolean(
+      pendingDeletionBatch &&
+        Array.isArray(pendingDeletionBatch.documentIds) &&
+        pendingDeletionBatch.documentIds.indexOf(documentId) !== -1
+    );
+  }
+
+  function sortDocumentsByNewest(documents) {
+    return (Array.isArray(documents) ? documents.slice() : []).sort(function (left, right) {
+      var leftTime = new Date(getDocumentFilterTimestamp(left) || 0).getTime();
+      var rightTime = new Date(getDocumentFilterTimestamp(right) || 0).getTime();
+      return rightTime - leftTime;
+    });
+  }
+
+  function restorePendingDocuments(documents) {
+    currentDocuments = sortDocumentsByNewest(currentDocuments.concat(Array.isArray(documents) ? documents : []));
+    syncDocumentViews(currentDocuments);
   }
 
   function setActionLoading(button, isLoading, loadingLabel, idleLabel) {
@@ -991,11 +1050,54 @@
     });
   }
 
+  function getDocumentFilterTimestamp(documentItem) {
+    if (!documentItem) {
+      return null;
+    }
+
+    return documentItem.updated_at || documentItem.created_at || null;
+  }
+
+  function matchesCurrentPeriodFilter(timestamp) {
+    var date = timestamp ? new Date(timestamp) : null;
+    var now = new Date();
+    var start;
+
+    if (currentPeriodFilter === "all") {
+      return true;
+    }
+
+    if (!date || Number.isNaN(date.getTime())) {
+      return false;
+    }
+
+    if (currentPeriodFilter === "month") {
+      return (
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth()
+      );
+    }
+
+    start = new Date(now.getTime());
+    if (currentPeriodFilter === "7d") {
+      start.setDate(start.getDate() - 7);
+    } else if (currentPeriodFilter === "30d") {
+      start.setDate(start.getDate() - 30);
+    } else if (currentPeriodFilter === "90d") {
+      start.setDate(start.getDate() - 90);
+    } else {
+      return true;
+    }
+
+    return date.getTime() >= start.getTime();
+  }
+
   function filterDocuments(documents) {
     return filterDocumentsBySearch(documents).filter(function (documentItem) {
       var status = normalizeStatusFilterValue(documentItem && documentItem.processing_status);
       var typeKey = getDocumentTypeKey(documentItem);
       var severityKey = getDocumentSeverityKey(documentItem);
+      var timestamp = getDocumentFilterTimestamp(documentItem);
 
       if (currentStatusFilter !== "all" && status !== currentStatusFilter) {
         return false;
@@ -1006,6 +1108,10 @@
       }
 
       if (currentSeverityFilter !== "all" && severityKey !== currentSeverityFilter) {
+        return false;
+      }
+
+      if (!matchesCurrentPeriodFilter(timestamp)) {
         return false;
       }
 
@@ -1025,6 +1131,12 @@
       var statusKey = String(item && item.statusKey || "all").toLowerCase();
       var typeKey = String(item && item.typeKey || "all").toLowerCase();
       var severityKey = String(item && item.severityKey || "unknown").toLowerCase();
+      var timestamp = item && item.timestamp;
+      var documentId = item && item.documentId;
+
+      if (documentId && hasPendingDeletionForDocument(documentId)) {
+        return false;
+      }
 
       if (query && searchable.indexOf(query) === -1) {
         return false;
@@ -1039,6 +1151,10 @@
       }
 
       if (currentSeverityFilter !== "all" && severityKey !== currentSeverityFilter) {
+        return false;
+      }
+
+      if (!matchesCurrentPeriodFilter(timestamp)) {
         return false;
       }
 
@@ -1382,6 +1498,7 @@
       var normalizedStatus = normalizeStatusFilterValue(documentItem.processing_status);
       var typeKey = getDocumentTypeKey(documentItem);
       return {
+        documentId: documentItem.id,
         dotClass:
           status.className === "badge--critical"
             ? "activity-dot--danger"
@@ -1396,6 +1513,7 @@
           "</strong> " +
           escapeHtml(status.label.toLowerCase()),
         timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at),
+        timestamp: documentItem.updated_at || documentItem.created_at,
         searchText: (documentItem.original_name || "") + " " + status.label,
         statusKey: normalizedStatus,
         typeKey: typeKey,
@@ -1859,9 +1977,11 @@
 
         if (hasCritical) {
           return {
+            documentId: documentItem.id,
             dotClass: "activity-dot--danger",
             html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> terminou com " + escapeHtml(String(criticalCount)) + " risco" + (criticalCount > 1 ? "s criticos" : " critico"),
             timeLabel: formatRelativeDate(analysisItem.updated_at || documentItem.updated_at || documentItem.created_at),
+            timestamp: analysisItem.updated_at || documentItem.updated_at || documentItem.created_at,
             searchText: (documentItem.original_name || "") + " riscos criticos",
             statusKey: "completed",
             typeKey: typeKey,
@@ -1872,9 +1992,11 @@
 
         if (hasAttention) {
           return {
+            documentId: documentItem.id,
             dotClass: "activity-dot--warn",
             html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> requer atencao em " + escapeHtml(String(attentionCount)) + " ponto" + (attentionCount > 1 ? "s" : ""),
             timeLabel: formatRelativeDate(analysisItem.updated_at || documentItem.updated_at || documentItem.created_at),
+            timestamp: analysisItem.updated_at || documentItem.updated_at || documentItem.created_at,
             searchText: (documentItem.original_name || "") + " requer atencao",
             statusKey: "completed",
             typeKey: typeKey,
@@ -1884,9 +2006,11 @@
         }
 
         return {
+          documentId: documentItem.id,
           dotClass: "activity-dot--safe",
           html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> esta pronto para revisao e compartilhamento",
           timeLabel: formatRelativeDate(analysisItem.updated_at || documentItem.updated_at || documentItem.created_at),
+          timestamp: analysisItem.updated_at || documentItem.updated_at || documentItem.created_at,
           searchText: (documentItem.original_name || "") + " analisado seguro",
           statusKey: "completed",
           typeKey: typeKey,
@@ -1897,9 +2021,11 @@
 
       if (status === "analyzing" || status === "uploaded") {
         return {
+          documentId: documentItem.id,
           dotClass: "activity-dot--default",
           html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> entrou na fila de analise",
           timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at),
+          timestamp: documentItem.updated_at || documentItem.created_at,
           searchText: (documentItem.original_name || "") + " enviado para analise",
           statusKey: status,
           typeKey: typeKey,
@@ -1910,9 +2036,11 @@
 
       if (status === "failed") {
         return {
+          documentId: documentItem.id,
           dotClass: "activity-dot--warn",
           html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> falhou e precisa de uma nova tentativa",
           timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at),
+          timestamp: documentItem.updated_at || documentItem.created_at,
           searchText: (documentItem.original_name || "") + " precisa de revisao",
           statusKey: "failed",
           typeKey: typeKey,
@@ -1922,9 +2050,11 @@
       }
 
       return {
+        documentId: documentItem.id,
         dotClass: "activity-dot--default",
         html: "<strong>" + escapeHtml(documentItem.original_name || "documento") + "</strong> disponivel no painel",
         timeLabel: formatRelativeDate(documentItem.updated_at || documentItem.created_at),
+        timestamp: documentItem.updated_at || documentItem.created_at,
         searchText: (documentItem.original_name || "") + " disponivel no painel",
         statusKey: status || "uploaded",
         typeKey: typeKey,
@@ -3013,7 +3143,7 @@ function readFilePayload(file) {
     var shouldRefreshAnalysis;
 
     currentSearchQuery = nextQuery;
-    filteredDocuments = filterDocumentsBySearch(currentDocuments);
+    filteredDocuments = filterDocuments(currentDocuments);
     activePage = getVisiblePageName();
     shouldRefreshAnalysis = ["analyze", "risks", "guided", "results"].indexOf(activePage) !== -1;
 
@@ -3185,6 +3315,158 @@ function readFilePayload(file) {
     }
   }
 
+  function undoPendingDeletionBatch() {
+    var batch = pendingDeletionBatch;
+
+    if (!batch) {
+      return;
+    }
+
+    if (batch.timerId) {
+      window.clearTimeout(batch.timerId);
+    }
+
+    pendingDeletionBatch = null;
+    restorePendingDocuments(batch.documents);
+    setDocumentsFeedback(
+      batch.documents.length === 1
+        ? '"' + (batch.documents[0].original_name || "documento") + '" voltou para o painel.'
+        : "A exclusao pendente foi desfeita e os documentos voltaram para o painel.",
+      "success"
+    );
+  }
+
+  async function commitPendingDeletionBatch() {
+    var batch = pendingDeletionBatch;
+    var successCount = 0;
+    var failures = [];
+    var firstDeletedName = "";
+
+    if (!batch) {
+      return;
+    }
+
+    pendingDeletionBatch = null;
+    isBulkDeletingDocuments = batch.documentIds.length > 1;
+    batch.documentIds.forEach(function (documentId) {
+      deletingDocumentIds[documentId] = true;
+    });
+    applySearchFilter();
+    setDocumentsFeedback("Excluindo documentos no banco...", "info");
+
+    try {
+      for (var index = 0; index < batch.documentIds.length; index += 1) {
+        var documentId = batch.documentIds[index];
+
+        try {
+          await performDocumentDeletion(documentId);
+          successCount += 1;
+          if (!firstDeletedName) {
+            firstDeletedName = (batch.documents[index] && batch.documents[index].original_name) || "";
+          }
+        } catch (error) {
+          failures.push(error && error.message ? error.message : "Falha ao excluir um documento.");
+        }
+      }
+
+      await loadDocuments();
+
+      if (failures.length) {
+        setDocumentsFeedback(
+          successCount > 0
+            ? successCount + " documento" + (successCount > 1 ? "s foram" : " foi") + " excluido" + (successCount > 1 ? "s" : "") + ", mas ainda houve " + failures.length + " falha" + (failures.length > 1 ? "s" : "") + ". " + failures[0]
+            : "Nao foi possivel excluir os documentos selecionados agora. " + failures[0],
+          successCount > 0 ? "info" : "error"
+        );
+        return;
+      }
+
+      setDocumentsFeedback(
+        successCount === 1 && firstDeletedName
+          ? '"' + firstDeletedName + '" foi excluido do painel e do banco.'
+          : successCount + " documentos foram excluidos do painel e do banco.",
+        "success"
+      );
+    } finally {
+      isBulkDeletingDocuments = false;
+      deletingDocumentIds = {};
+      applySearchFilter();
+    }
+  }
+
+  function scheduleDeletionBatch(documentIds, options) {
+    var config = options || {};
+    var uniqueIds = [];
+    var documentsToDelete = [];
+    var label;
+    var feedbackMessage;
+
+    if (pendingDeletionBatch) {
+      setDocumentsFeedback("Finalize ou desfaça a exclusao pendente antes de iniciar outra.", "info");
+      return null;
+    }
+
+    (Array.isArray(documentIds) ? documentIds : []).forEach(function (documentId) {
+      if (documentId && uniqueIds.indexOf(documentId) === -1) {
+        uniqueIds.push(documentId);
+      }
+    });
+
+    documentsToDelete = uniqueIds.map(findDocumentById).filter(Boolean);
+    if (!documentsToDelete.length) {
+      return null;
+    }
+
+    label = documentsToDelete.length === 1
+      ? '"' + (documentsToDelete[0].original_name || "este documento") + '"'
+      : String(documentsToDelete.length) + " documentos";
+
+    if (config.confirm !== false && !window.confirm("Excluir " + label + "? Voce ainda podera desfazer por alguns segundos antes da remocao definitiva no banco.")) {
+      return null;
+    }
+
+    currentDocuments = currentDocuments.filter(function (documentItem) {
+      return uniqueIds.indexOf(documentItem.id) === -1;
+    });
+
+    uniqueIds.forEach(function (documentId) {
+      delete selectedDocumentIds[documentId];
+      if (currentDocumentId === documentId) {
+        currentDocumentId = "";
+      }
+    });
+
+    syncDocumentViews(currentDocuments);
+
+    pendingDeletionBatch = {
+      documentIds: uniqueIds,
+      documents: documentsToDelete,
+      timerId: window.setTimeout(function () {
+        commitPendingDeletionBatch();
+      }, pendingDeletionWindowMs)
+    };
+
+    feedbackMessage = documentsToDelete.length === 1
+      ? label + " saiu do painel. Desfaca em alguns segundos se foi engano."
+      : documentsToDelete.length + " documentos sairam do painel. Desfaca em alguns segundos se precisar.";
+
+    setDocumentsUndoFeedback(feedbackMessage, function () {
+      undoPendingDeletionBatch();
+    });
+
+    return {
+      documentIds: uniqueIds
+    };
+  }
+
+  function deleteDocument(documentId, options) {
+    return Promise.resolve(scheduleDeletionBatch([documentId], options));
+  }
+
+  function deleteSelectedDocuments() {
+    return Promise.resolve(scheduleDeletionBatch(getSelectedDocumentIds(), { confirm: true }));
+  }
+
   function applyRiskFilter(filter) {
     currentRiskFilter = filter || "all";
     Array.prototype.forEach.call(document.querySelectorAll("#page-risks .risk-card"), function (card) {
@@ -3258,6 +3540,7 @@ function readFilePayload(file) {
       currentStatusFilter = "all";
       currentTypeFilter = "all";
       currentSeverityFilter = "all";
+      currentPeriodFilter = "all";
       documentSeverityCache = {};
       if (dashboardSearchInput) {
         dashboardSearchInput.value = "";
@@ -3270,6 +3553,9 @@ function readFilePayload(file) {
       }
       if (dashboardFilterSeverity) {
         dashboardFilterSeverity.value = "all";
+      }
+      if (dashboardFilterPeriod) {
+        dashboardFilterPeriod.value = "all";
       }
       setCurrentUser(data.user || null);
       showApp();
@@ -3303,6 +3589,7 @@ function readFilePayload(file) {
       currentStatusFilter = "all";
       currentTypeFilter = "all";
       currentSeverityFilter = "all";
+      currentPeriodFilter = "all";
       documentSeverityCache = {};
       if (dashboardSearchInput) {
         dashboardSearchInput.value = "";
@@ -3315,6 +3602,9 @@ function readFilePayload(file) {
       }
       if (dashboardFilterSeverity) {
         dashboardFilterSeverity.value = "all";
+      }
+      if (dashboardFilterPeriod) {
+        dashboardFilterPeriod.value = "all";
       }
       setCurrentUser(data.user || null);
       showApp();
@@ -3652,6 +3942,13 @@ function readFilePayload(file) {
     if (dashboardFilterSeverity) {
       dashboardFilterSeverity.addEventListener("change", function () {
         currentSeverityFilter = dashboardFilterSeverity.value || "all";
+        updateSearchQuery(currentSearchQuery);
+      });
+    }
+
+    if (dashboardFilterPeriod) {
+      dashboardFilterPeriod.addEventListener("change", function () {
+        currentPeriodFilter = dashboardFilterPeriod.value || "all";
         updateSearchQuery(currentSearchQuery);
       });
     }

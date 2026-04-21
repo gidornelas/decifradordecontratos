@@ -51,6 +51,8 @@
   var documentsSelectAllBtn = document.getElementById("documents-select-all-btn");
   var documentsClearSelectionBtn = document.getElementById("documents-clear-selection-btn");
   var documentsBulkDeleteBtn = document.getElementById("documents-bulk-delete-btn");
+  var documentsUploadEntry = document.getElementById("documents-upload-entry");
+  var documentsUploadBtn = document.getElementById("documents-upload-btn");
   var documentsFeedback = document.getElementById("documents-feedback");
   var documentsFeedbackText = document.getElementById("documents-feedback-text");
   var documentsFeedbackUndoBtn = document.getElementById("documents-feedback-undo-btn");
@@ -3800,6 +3802,23 @@ function readFilePayload(file) {
     loadAndRenderDocumentAnalysis(documentId);
   }
 
+  function openAnalyzeUploadPicker() {
+    switchPage("analyze");
+
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  function startUploadFromDocuments(file) {
+    if (!file) {
+      return;
+    }
+
+    switchPage("analyze");
+    uploadSelectedFile(file);
+  }
+
   async function deleteDocument(documentId) {
     var documentItem = findDocumentById(documentId);
     var documentName = documentItem && documentItem.original_name
@@ -4468,6 +4487,45 @@ function readFilePayload(file) {
         uploadSelectedFile(fileInput.files[0]);
       }
     });
+
+    if (documentsUploadEntry) {
+      documentsUploadEntry.addEventListener("click", function () {
+        openAnalyzeUploadPicker();
+      });
+
+      documentsUploadEntry.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openAnalyzeUploadPicker();
+        }
+      });
+
+      documentsUploadEntry.addEventListener("dragover", function (event) {
+        event.preventDefault();
+        documentsUploadEntry.classList.add("is-drag");
+      });
+
+      documentsUploadEntry.addEventListener("dragleave", function () {
+        documentsUploadEntry.classList.remove("is-drag");
+      });
+
+      documentsUploadEntry.addEventListener("drop", function (event) {
+        event.preventDefault();
+        documentsUploadEntry.classList.remove("is-drag");
+
+        if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
+          startUploadFromDocuments(event.dataTransfer.files[0]);
+        }
+      });
+    }
+
+    if (documentsUploadBtn) {
+      documentsUploadBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        openAnalyzeUploadPicker();
+      });
+    }
   }
 
   function bindSelects() {

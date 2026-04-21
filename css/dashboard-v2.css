@@ -258,6 +258,15 @@ input,select,textarea{font-family:inherit}
 .upload-zone{border:2px dashed var(--neutral-3);border-radius:var(--r-lg);padding:48px 24px;text-align:center;transition:all .2s;cursor:pointer;background:var(--white)}
 .upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:var(--blue-bg)}
 .upload-zone.processing{pointer-events:none;opacity:.75}
+.upload-entry-card{display:flex;align-items:center;gap:16px;padding:18px 20px;margin-bottom:16px;border:1.5px dashed var(--blue);border-radius:var(--r-lg);background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(255,255,255,.96));cursor:pointer;transition:all .18s}
+.upload-entry-card:hover,.upload-entry-card.is-drag{border-color:var(--blue-dk);background:linear-gradient(135deg,rgba(37,99,235,.14),rgba(239,246,255,1));box-shadow:var(--sh)}
+.upload-entry-card:focus-visible{outline:none;border-color:var(--blue-dk);box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+.upload-entry-card__icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:var(--white);color:var(--blue);box-shadow:0 10px 24px rgba(37,99,235,.12);flex-shrink:0}
+.upload-entry-card__icon svg{width:24px;height:24px}
+.upload-entry-card__content{display:flex;flex-direction:column;gap:4px;min-width:0}
+.upload-entry-card__title{font-size:15px;font-weight:700;color:var(--text)}
+.upload-entry-card__text{font-size:13.5px;color:var(--text-2);line-height:1.6}
+.upload-entry-card__action{margin-left:auto;flex-shrink:0}
 .upload-icon{width:52px;height:52px;border-radius:14px;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:var(--blue)}
 .upload-icon svg{width:24px;height:24px}
 .upload-heading{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px}
@@ -537,6 +546,8 @@ input,select,textarea{font-family:inherit}
   .results-meta{grid-template-columns:1fr}
   .deadlines{grid-template-columns:1fr}
   .guided-tabs{max-width:none}
+  .upload-entry-card{flex-direction:column;align-items:flex-start}
+  .upload-entry-card__action{margin-left:0;width:100%;justify-content:center}
   .table-head{display:none}
   .table-row{grid-template-columns:1fr;gap:6px;padding:14px 16px}
   .table--selectable .table-row{grid-template-columns:1fr}

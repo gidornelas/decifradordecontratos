@@ -209,6 +209,7 @@ Status:
 - [x] activity feed com resumo visual ligado aos filtros atuais
 - [x] configuracoes com resumo real de uso e saude recente das analises
 - [x] exclusao em lote com resumo de selecao e estado da lixeira temporaria
+- [x] leitura em audio gratuita da explicacao simplificada na revisao guiada via `speechSynthesis`
 
 ## Fase 7 - Producao
 

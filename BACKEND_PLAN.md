@@ -10,6 +10,7 @@ O projeto saiu do estado frontend-only e ja possui backend operacional em produc
 - storage privado via Cloudflare R2
 - analise server-side com Claude
 - dashboard alimentado por APIs base, secoes reais e navegacao mobile refinada
+- acessibilidade da revisao guiada com leitura em audio no navegador sem custo adicional
 - healthcheck operacional
 
 O backend e o dashboard ja cobrem o ciclo principal de producao, com operabilidade e UX essencial conectadas aos dados reais.
@@ -71,6 +72,7 @@ Implementado:
 - activity feed com resumo visual coerente com busca, filtros e auditoria
 - configuracoes com resumo de uso real e saude recente das analises
 - exclusao em lote com resumo de selecao e lixeira temporaria mais clara
+- leitura em audio da explicacao simplificada na revisao guiada usando Web Speech API nativa do navegador
 
 ## Modulos
 
@@ -118,6 +120,7 @@ Responsabilidades:
 - documentos recentes
 - distribuicao de risco
 - resultados, riscos e leitura guiada reais
+- leitura em audio da explicacao simplificada para acessibilidade
 - busca, filtros e navegacao mobile
 
 ### Operabilidade

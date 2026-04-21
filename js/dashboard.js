@@ -120,6 +120,12 @@
   var pendingDeletionWindowMs = 6000;
   var sessionHandlingInFlight = false;
   var overviewComparisonToken = 0;
+  var speechSynthesisApi = typeof window !== "undefined" && "speechSynthesis" in window
+    ? window.speechSynthesis
+    : null;
+  var isSpeechSynthesisSupported = Boolean(speechSynthesisApi && typeof window.SpeechSynthesisUtterance === "function");
+  var activeSpeechButton = null;
+  var activeSpeechKey = "";
   var pageTitles = {
     overview: "Visão geral",
     documents: "Documentos",
@@ -144,6 +150,10 @@
 
   var isLocalPreviewMode = window.location.protocol === "file:";
   var localPreviewStorageKey = "clausee-local-preview-v1";
+
+  if (!isSpeechSynthesisSupported && document && document.documentElement) {
+    document.documentElement.classList.add("no-tts");
+  }
 
   function cloneLocalPreview(value) {
     return JSON.parse(JSON.stringify(value));
@@ -3124,6 +3134,154 @@
     return escapeHtml(parts.join(" · "));
   }
 
+  function getClauseAudioKey(clause, index) {
+    var clauseNumber = clause && clause.clause_number ? String(clause.clause_number) : String(index + 1);
+    return "clause-audio-" + clauseNumber + "-" + index;
+  }
+
+  function buildClauseAudioText(clause, index) {
+    var clauseLabel = clause && clause.clause_number
+      ? "Clausula " + clause.clause_number
+      : "Clausula " + String(index + 1);
+    var title = clause && clause.clause_title ? clause.clause_title : "";
+    var simplified = clause && clause.simplified_text ? clause.simplified_text : "";
+    var why = clause && clause.why_it_matters ? clause.why_it_matters : "";
+    var parts = [];
+
+    parts.push(clauseLabel + (title ? ". " + title + "." : "."));
+
+    if (simplified) {
+      parts.push("Explicacao simplificada. " + simplified);
+    }
+
+    if (why) {
+      parts.push("Por que isso importa. " + why);
+    }
+
+    return parts.join(" ").replace(/\s+/g, " ").trim();
+  }
+
+  function createClauseAudioButtonMarkup(clause, index) {
+    if (!isSpeechSynthesisSupported) {
+      return "";
+    }
+
+    return [
+      '<button class="clause-audio-btn" type="button" data-audio-action="toggle" data-audio-key="' + escapeHtml(getClauseAudioKey(clause, index)) + '" data-audio-text="' + escapeHtml(buildClauseAudioText(clause, index)) + '" aria-label="Ouvir explicacao simplificada desta clausula">',
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>',
+      '<span class="clause-audio-btn__label">Ouvir explicacao</span>',
+      "</button>"
+    ].join("");
+  }
+
+  function setClauseAudioButtonState(button, isPlaying) {
+    var label = button ? button.querySelector(".clause-audio-btn__label") : null;
+
+    if (!button) {
+      return;
+    }
+
+    button.classList.toggle("is-playing", Boolean(isPlaying));
+    button.setAttribute(
+      "aria-label",
+      isPlaying
+        ? "Parar leitura em audio desta clausula"
+        : "Ouvir explicacao simplificada desta clausula"
+    );
+
+    if (label) {
+      label.textContent = isPlaying ? "Parar audio" : "Ouvir explicacao";
+    }
+  }
+
+  function clearActiveClauseAudio() {
+    if (activeSpeechButton) {
+      setClauseAudioButtonState(activeSpeechButton, false);
+    }
+
+    activeSpeechButton = null;
+    activeSpeechKey = "";
+  }
+
+  function choosePortugueseVoice() {
+    var voices = speechSynthesisApi && typeof speechSynthesisApi.getVoices === "function"
+      ? speechSynthesisApi.getVoices()
+      : [];
+    var ptBrVoice = voices.find(function (voice) {
+      return /^pt-BR/i.test(String(voice && voice.lang || ""));
+    });
+    var ptVoice;
+
+    if (ptBrVoice) {
+      return ptBrVoice;
+    }
+
+    ptVoice = voices.find(function (voice) {
+      return /^pt/i.test(String(voice && voice.lang || ""));
+    });
+
+    return ptVoice || null;
+  }
+
+  function stopClauseAudio() {
+    if (speechSynthesisApi && typeof speechSynthesisApi.cancel === "function") {
+      speechSynthesisApi.cancel();
+    }
+
+    clearActiveClauseAudio();
+  }
+
+  function speakClauseExplanation(button) {
+    var text;
+    var key;
+    var utterance;
+    var voice;
+
+    if (!isSpeechSynthesisSupported || !button) {
+      return;
+    }
+
+    text = String(button.getAttribute("data-audio-text") || "").trim();
+    key = String(button.getAttribute("data-audio-key") || "");
+
+    if (!text) {
+      return;
+    }
+
+    if (activeSpeechKey && activeSpeechKey === key) {
+      stopClauseAudio();
+      return;
+    }
+
+    stopClauseAudio();
+
+    utterance = new window.SpeechSynthesisUtterance(text);
+    utterance.lang = "pt-BR";
+    utterance.rate = 1;
+    utterance.pitch = 1;
+
+    voice = choosePortugueseVoice();
+    if (voice) {
+      utterance.voice = voice;
+      if (voice.lang) {
+        utterance.lang = voice.lang;
+      }
+    }
+
+    utterance.onend = function () {
+      clearActiveClauseAudio();
+    };
+
+    utterance.onerror = function () {
+      clearActiveClauseAudio();
+    };
+
+    activeSpeechButton = button;
+    activeSpeechKey = key;
+    setClauseAudioButtonState(button, true);
+    speechSynthesisApi.speak(utterance);
+  }
+
   function buildRiskItems(result) {
     var items = [];
     var seen = {};
@@ -3233,6 +3391,7 @@
       "</div>",
       "<div>",
       '<span class="detail-label">Explicacao simplificada</span>',
+      createClauseAudioButtonMarkup(clause, index),
       '<p class="detail-simple">' + escapeHtml(clause.simplified_text || "Sem resumo simplificado.") + "</p>",
       '<div class="detail-why"><span>' + escapeHtml(clause.why_it_matters || "Sem contexto adicional.") + "</span></div>",
       "</div>",
@@ -3510,6 +3669,8 @@
       firstRecommendation.innerHTML = "<div>" + escapeHtml(message) + "</div>";
     }
 
+    stopClauseAudio();
+
     if (clausesRoot) {
       clausesRoot.innerHTML = !currentDocuments.length && !getSearchQuery()
         ? getDocumentOnboardingMarkup()
@@ -3582,6 +3743,7 @@
         : '<div class="card"><div class="table-empty">Sem cláusulas para exibir.</div></div>';
     }
 
+    stopClauseAudio();
     renderChecklist(buildChecklistItems(result));
 
     var progressText = document.querySelector(".guided-progress-text");
@@ -4927,7 +5089,16 @@ function readFilePayload(file) {
 
   function bindInteractivePanels() {
     document.addEventListener("click", function (event) {
+      var audioTrigger = event.target.closest("[data-audio-action]");
       var clauseTrigger = event.target.closest("[data-clause-trigger]");
+
+      if (audioTrigger) {
+        event.preventDefault();
+        event.stopPropagation();
+        speakClauseExplanation(audioTrigger);
+        return;
+      }
+
       if (clauseTrigger) {
         var clauseItem = clauseTrigger.closest("[data-clause-item]");
         if (clauseItem) {

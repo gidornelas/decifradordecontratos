@@ -82,12 +82,12 @@
       <div class="nav-section-label">Fluxo de análise</div>
       <button class="nav-item" data-page="analyze">
         <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Nova análise
+        Enviar contrato
         <span class="nav-badge" hidden>0</span>
       </button>
       <button class="nav-item" data-page="risks">
         <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        Riscos e alertas
+        Riscos do contrato
         <span class="nav-badge" hidden>0</span>
       </button>
       <button class="nav-item" data-page="guided">
@@ -353,7 +353,7 @@
           </button>
         </div>
       </div>
-      <div class="upload-entry-card" id="documents-upload-entry" tabindex="0" role="button" aria-label="Adicionar contrato">
+      <div class="upload-entry-card" id="documents-upload-entry">
         <div class="upload-entry-card__icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         </div>
@@ -391,7 +391,7 @@
     <div class="page" id="page-analyze" data-screen-label="Analisar">
       <div class="page-head">
         <div>
-          <h2 class="page-title">Nova análise</h2>
+          <h2 class="page-title">Enviar contrato</h2>
           <p class="page-intro">Envie um novo contrato para iniciar o fluxo. Depois, acompanhe riscos, revisão guiada e resumo final nas etapas abaixo.</p>
         </div>
         <div class="page-actions">
@@ -408,12 +408,16 @@
         <button class="analysis-flow-tab" data-nav="results" data-analysis-page="results" type="button">4. Resumo final</button>
       </div>
       <div class="upload-zone" id="upload-zone">
-        <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt" hidden>
+        <input type="file" id="file-input" accept=".pdf,.docx,.txt" hidden>
         <div class="upload-icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         </div>
         <p class="upload-heading">Arraste ou selecione o contrato</p>
-        <p class="upload-text">Cole o texto, arraste um arquivo ou clique para selecionar. Aceita PDF, DOCX e TXT.</p>
+        <p class="upload-text">Arraste um arquivo ou clique para selecionar. Aceita PDF, DOCX e TXT.</p>
+        <div class="upload-actions">
+          <button class="btn btn-primary upload-choose-btn" id="upload-choose-btn" type="button">Escolher arquivo</button>
+          <span class="upload-hint">ou arraste o arquivo para esta área</span>
+        </div>
         <div class="upload-formats">
           <span class="upload-format">PDF</span>
           <span class="upload-format">DOCX</span>
@@ -473,7 +477,7 @@
     <div class="page" id="page-risks" data-screen-label="Riscos">
       <div class="page-head">
         <div>
-          <h2 class="page-title">Riscos e alertas</h2>
+          <h2 class="page-title">Riscos do contrato</h2>
           <p class="page-intro">Use esta etapa para localizar cláusulas críticas e entender exatamente o que merece negociação.</p>
         </div>
         <div class="page-actions">

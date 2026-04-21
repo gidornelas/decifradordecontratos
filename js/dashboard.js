@@ -60,6 +60,7 @@
   var documentsTable = document.getElementById("documents-table");
   var uploadZone = document.getElementById("upload-zone");
   var fileInput = document.getElementById("file-input");
+  var uploadChooseBtn = document.getElementById("upload-choose-btn");
   var uploadProgress = document.getElementById("upload-progress");
   var progressFill = document.getElementById("progress-fill");
   var progressText = document.getElementById("progress-text");
@@ -120,6 +121,8 @@
   var pendingDeletionWindowMs = 6000;
   var sessionHandlingInFlight = false;
   var overviewComparisonToken = 0;
+  var analysisRenderSequence = 0;
+  var isAnalyzeUploadMode = false;
   var speechSynthesisApi = typeof window !== "undefined" && "speechSynthesis" in window
     ? window.speechSynthesis
     : null;
@@ -141,8 +144,8 @@
     overview: "Inicio",
     documents: "Contratos",
     history: "Atividade",
-    analyze: "Nova analise",
-    risks: "Riscos e alertas",
+    analyze: "Enviar contrato",
+    risks: "Riscos do contrato",
     guided: "Revisao guiada",
     results: "Resumo final",
     settings: "Conta"
@@ -693,6 +696,8 @@
     currentPeriodFilter = "all";
     currentAuditEventFilter = "all";
     documentSeverityCache = {};
+    isAnalyzeUploadMode = false;
+    analysisRenderSequence += 1;
     selectedDocumentIds = {};
     deletingDocumentIds = {};
     isBulkDeletingDocuments = false;
@@ -1120,7 +1125,21 @@
     closeMobileNav();
   }
 
+  function enterAnalyzeUploadMode() {
+    isAnalyzeUploadMode = true;
+    analysisRenderSequence += 1;
+  }
+
+  function leaveAnalyzeUploadMode() {
+    isAnalyzeUploadMode = false;
+  }
+
+  function shouldKeepAnalyzeUploadFocus() {
+    return isAnalyzeUploadMode && getVisiblePageName() === "analyze";
+  }
+
   function openAnalyzeUploadEntry() {
+    enterAnalyzeUploadMode();
     switchPage("analyze");
     resetUploadUi();
     currentDocumentId = "";
@@ -1131,6 +1150,13 @@
 
     if (uploadZone) {
       uploadZone.style.display = "";
+      if (uploadChooseBtn && typeof uploadChooseBtn.focus === "function") {
+        try {
+          uploadChooseBtn.focus({ preventScroll: true });
+        } catch (focusError) {
+          uploadChooseBtn.focus();
+        }
+      }
       if (typeof uploadZone.scrollIntoView === "function") {
         uploadZone.scrollIntoView({ behavior: "smooth", block: "start" });
       }
@@ -1805,6 +1831,8 @@
 
   function getDocumentOnboardingMarkup() {
     var state = getOnboardingState();
+    var primaryUploadShortcut = state.primaryNav === "analyze" ? ' data-upload-shortcut="true"' : "";
+    var secondaryUploadShortcut = state.secondaryNav === "analyze" ? ' data-upload-shortcut="true"' : "";
 
     return [
       '<div class="empty-state">',
@@ -1812,8 +1840,8 @@
       '<div class="empty-state-title">' + escapeHtml(state.title) + "</div>",
       '<div class="empty-state-text">' + escapeHtml(state.text) + "</div>",
       '<div class="empty-state-actions">',
-      "<button class=\"btn btn-primary\" type=\"button\" data-nav=\"" + escapeHtml(state.primaryNav) + "\">" + escapeHtml(state.primaryLabel) + "</button>",
-      "<button class=\"btn btn-outline\" type=\"button\" data-nav=\"" + escapeHtml(state.secondaryNav) + "\">" + escapeHtml(state.secondaryLabel) + "</button>",
+      "<button class=\"btn btn-primary\" type=\"button\" data-nav=\"" + escapeHtml(state.primaryNav) + "\"" + primaryUploadShortcut + ">" + escapeHtml(state.primaryLabel) + "</button>",
+      "<button class=\"btn btn-outline\" type=\"button\" data-nav=\"" + escapeHtml(state.secondaryNav) + "\"" + secondaryUploadShortcut + ">" + escapeHtml(state.secondaryLabel) + "</button>",
       "</div>",
       "</div>"
     ].join("");
@@ -2165,7 +2193,7 @@
         text: "Os documentos enviados ainda nao concluiram uma analise valida. Revise o arquivo, tente outro formato ou envie uma nova versao.",
         primaryLabel: "Ver documentos",
         primaryNav: "documents",
-        secondaryLabel: "Nova analise",
+        secondaryLabel: "Enviar contrato",
         secondaryNav: "analyze"
       };
     }
@@ -2185,11 +2213,14 @@
       return "";
     }
 
+    var isAnalyzeAction = nav === "analyze";
+
     return '<button class="btn btn-outline btn-sm" type="button" data-nav="' +
       escapeHtml(nav || "") +
       '"' +
-      (documentId ? ' data-document-id="' + escapeHtml(documentId) + '"' : "") +
-      (page ? ' data-target-page="' + escapeHtml(page) + '"' : "") +
+      (isAnalyzeAction ? ' data-upload-shortcut="true"' : "") +
+      (!isAnalyzeAction && documentId ? ' data-document-id="' + escapeHtml(documentId) + '"' : "") +
+      (!isAnalyzeAction && page ? ' data-target-page="' + escapeHtml(page) + '"' : "") +
       ">" +
       escapeHtml(label) +
       "</button>";
@@ -3058,6 +3089,7 @@
     var hasActiveInFilter = activeDocument && filteredDocuments.some(function (item) {
       return item.id === activeDocument.id;
     });
+    var keepAnalyzeUploadFocus = shouldKeepAnalyzeUploadFocus();
 
     updateNavigationBadges(currentDocuments);
     renderTable(overviewDocumentsTable, filteredDocuments, 5);
@@ -3068,6 +3100,11 @@
     renderOverviewActivity(filterOverviewActivityItems(overviewActivityItems));
     renderAuditHistory(filterAuditHistoryItems(auditHistoryItems));
     refreshOverviewComparisons(filteredDocuments);
+
+    if (keepAnalyzeUploadFocus) {
+      setActiveDocument("");
+      return;
+    }
 
     setActiveDocument(hasActiveInFilter ? currentDocumentId : (filteredDocuments.length ? filteredDocuments[0].id : ""));
   }
@@ -4105,7 +4142,7 @@
           "Nenhum contrato enviado",
           "Envie um arquivo TXT, PDF ou DOCX para começar a análise."
         );
-      } else if (currentDocumentId) {
+      } else if (currentDocumentId && !shouldKeepAnalyzeUploadFocus()) {
         await loadAndRenderDocumentAnalysis(currentDocumentId);
       }
     } catch (error) {
@@ -4232,26 +4269,45 @@ function readFilePayload(file) {
       });
 
       progressFill.style.width = "100%";
-      progressText.textContent = "Contrato enviado com sucesso.";
-        currentDocumentId = created && created.document ? created.document.id : "";
+      progressText.textContent = "Contrato enviado. Carregando analise...";
+      currentDocumentId = created && created.document ? created.document.id : "";
+      leaveAnalyzeUploadMode();
       await loadDocuments();
       if (newAnalysisBtn) {
         newAnalysisBtn.style.display = "";
       }
 
       setTimeout(function () {
-        resetUploadUi();
-        switchPage("documents");
+        if (uploadZone) {
+          uploadZone.classList.remove("processing", "drag");
+        }
+        if (uploadProgress) {
+          uploadProgress.style.display = "none";
+        }
+        if (progressFill) {
+          progressFill.style.width = "0%";
+          progressFill.style.background = "var(--blue)";
+        }
+        if (progressText) {
+          progressText.textContent = "Enviando contrato...";
+          progressText.style.color = "";
+        }
+        if (fileInput) {
+          fileInput.value = "";
+        }
       }, 900);
     } catch (error) {
+      enterAnalyzeUploadMode();
       progressFill.style.width = "100%";
       progressFill.style.background = "var(--danger)";
       progressText.textContent = error.message || "Falha ao enviar o contrato.";
       progressText.style.color = "var(--danger)";
-
-      setTimeout(function () {
-        resetUploadUi();
-      }, 1400);
+      if (uploadZone) {
+        uploadZone.classList.remove("processing");
+      }
+      if (fileInput) {
+        fileInput.value = "";
+      }
     }
   }
 
@@ -4288,6 +4344,7 @@ function readFilePayload(file) {
   }
 
   async function loadAndRenderDocumentAnalysis(documentId) {
+    var requestSequence = ++analysisRenderSequence;
     var documentItem = findDocumentById(documentId);
 
     if (!documentItem) {
@@ -4306,8 +4363,14 @@ function readFilePayload(file) {
 
     try {
       var result = await ensureAnalysisForDocument(documentId);
+      if (requestSequence !== analysisRenderSequence) {
+        return;
+      }
       renderAllAnalysisViews(documentItem, result);
     } catch (error) {
+      if (requestSequence !== analysisRenderSequence) {
+        return;
+      }
       renderAnalysisEmptyState(
         documentItem.original_name || "documento",
         error.message || "Não foi possível gerar a análise agora."
@@ -4343,6 +4406,10 @@ function readFilePayload(file) {
       return;
     }
 
+    if (activePage === "analyze" && shouldKeepAnalyzeUploadFocus()) {
+      return;
+    }
+
     if (!filteredDocuments.length) {
       renderSearchEmptyState();
       return;
@@ -4355,6 +4422,7 @@ function readFilePayload(file) {
 
   function openDocument(documentId, pageName) {
     if (!documentId) return;
+    leaveAnalyzeUploadMode();
     switchPage(pageName || "results");
     loadAndRenderDocumentAnalysis(documentId);
   }
@@ -4857,18 +4925,30 @@ function readFilePayload(file) {
 
     navItems.forEach(function (item) {
       item.addEventListener("click", function () {
-        switchPage(item.getAttribute("data-page"));
+        var pageName = item.getAttribute("data-page");
+        if (pageName === "analyze") {
+          openAnalyzeUploadEntry();
+          return;
+        }
+
+        leaveAnalyzeUploadMode();
+        switchPage(pageName);
       });
     });
 
     navButtons.forEach(function (button) {
       button.addEventListener("click", function () {
-        if (button.getAttribute("data-upload-shortcut") === "true") {
+        var targetNav = button.getAttribute("data-nav");
+        if (
+          button.getAttribute("data-upload-shortcut") === "true" ||
+          (targetNav === "analyze" && button.classList.contains("analysis-flow-tab"))
+        ) {
           openAnalyzeUploadEntry();
           return;
         }
 
-        switchPage(button.getAttribute("data-nav"));
+        leaveAnalyzeUploadMode();
+        switchPage(targetNav);
       });
     });
 
@@ -4886,11 +4966,15 @@ function readFilePayload(file) {
         return;
       }
 
-      if (trigger.getAttribute("data-upload-shortcut") === "true") {
+      if (
+        trigger.getAttribute("data-upload-shortcut") === "true" ||
+        (targetPage === "analyze" && trigger.classList.contains("analysis-flow-tab"))
+      ) {
         openAnalyzeUploadEntry();
         return;
       }
 
+      leaveAnalyzeUploadMode();
       switchPage(trigger.getAttribute("data-nav"));
     });
 
@@ -5055,16 +5139,17 @@ function readFilePayload(file) {
       }
     });
 
+    if (uploadChooseBtn) {
+      uploadChooseBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        fileInput.click();
+      });
+    }
+
     if (documentsUploadEntry) {
       documentsUploadEntry.addEventListener("click", function () {
         openAnalyzeUploadPicker();
-      });
-
-      documentsUploadEntry.addEventListener("keydown", function (event) {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          openAnalyzeUploadPicker();
-        }
       });
 
       documentsUploadEntry.addEventListener("dragover", function (event) {
@@ -5100,6 +5185,7 @@ function readFilePayload(file) {
       if (!select) return;
       select.addEventListener("change", function () {
         if (select.value) {
+          leaveAnalyzeUploadMode();
           loadAndRenderDocumentAnalysis(select.value);
         }
       });
@@ -5168,6 +5254,7 @@ function readFilePayload(file) {
   function bindActions() {
     if (newAnalysisBtn) {
       newAnalysisBtn.addEventListener("click", function () {
+        enterAnalyzeUploadMode();
         currentDocumentId = "";
         analysisCache = {};
         resetUploadUi();

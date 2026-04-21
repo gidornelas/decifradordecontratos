@@ -257,6 +257,7 @@ input,select,textarea{font-family:inherit}
 /* â”€â”€ UPLOAD ZONE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .upload-zone{border:2px dashed var(--neutral-3);border-radius:var(--r-lg);padding:48px 24px;text-align:center;transition:all .2s;cursor:pointer;background:var(--white)}
 .upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:var(--blue-bg)}
+.upload-zone:focus-visible{outline:none;border-color:var(--blue-dk);box-shadow:0 0 0 3px rgba(37,99,235,.16)}
 .upload-zone.processing{pointer-events:none;opacity:.75}
 .upload-entry-card{display:flex;align-items:center;gap:16px;padding:18px 20px;margin-bottom:16px;border:1.5px dashed var(--blue);border-radius:var(--r-lg);background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(255,255,255,.96));cursor:pointer;transition:all .18s}
 .upload-entry-card:hover,.upload-entry-card.is-drag{border-color:var(--blue-dk);background:linear-gradient(135deg,rgba(37,99,235,.14),rgba(239,246,255,1));box-shadow:var(--sh)}
@@ -271,6 +272,9 @@ input,select,textarea{font-family:inherit}
 .upload-icon svg{width:24px;height:24px}
 .upload-heading{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px}
 .upload-text{font-size:14px;color:var(--neutral);margin-bottom:16px}
+.upload-actions{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:16px}
+.upload-choose-btn{min-width:180px}
+.upload-hint{font-size:12.5px;color:var(--neutral)}
 .upload-formats{display:flex;align-items:center;justify-content:center;gap:8px}
 .upload-format{font-size:11.5px;font-weight:700;color:var(--neutral);border:1.5px solid var(--neutral-4);border-radius:5px;padding:3px 8px}
 

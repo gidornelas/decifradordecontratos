@@ -142,6 +142,380 @@
     settings: "Conta"
   });
 
+  var isLocalPreviewMode = window.location.protocol === "file:";
+  var localPreviewStorageKey = "clausee-local-preview-v1";
+
+  function cloneLocalPreview(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function createLocalPreviewId(prefix) {
+    return [
+      prefix || "preview",
+      Date.now().toString(36),
+      Math.random().toString(36).slice(2, 8)
+    ].join("-");
+  }
+
+  function inferContractTypeFromName(fileName) {
+    var normalized = String(fileName || "").toLowerCase();
+
+    if (normalized.indexOf("nda") !== -1 || normalized.indexOf("confid") !== -1) {
+      return "Confidencialidade";
+    }
+    if (normalized.indexOf("trabalho") !== -1 || normalized.indexOf("emprego") !== -1) {
+      return "Trabalho";
+    }
+    if (normalized.indexOf("alug") !== -1 || normalized.indexOf("loca") !== -1) {
+      return "Locacao";
+    }
+    if (normalized.indexOf("serv") !== -1) {
+      return "Prestacao de servicos";
+    }
+
+    return "Contrato";
+  }
+
+  function getLocalPreviewState() {
+    var parsed = null;
+    var fallbackUser = {
+      id: "local-preview-user",
+      full_name: "Preview local",
+      email: "preview@clausee.local",
+      plan_code: "pro",
+      created_at: new Date().toISOString()
+    };
+
+    try {
+      parsed = JSON.parse(window.localStorage.getItem(localPreviewStorageKey) || "null");
+    } catch (error) {
+      parsed = null;
+    }
+
+    parsed = parsed && typeof parsed === "object" ? parsed : {};
+    parsed.user = parsed.user && typeof parsed.user === "object" ? parsed.user : fallbackUser;
+    parsed.documents = Array.isArray(parsed.documents) ? parsed.documents : [];
+    parsed.analyses = parsed.analyses && typeof parsed.analyses === "object" ? parsed.analyses : {};
+
+    return parsed;
+  }
+
+  function saveLocalPreviewState(state) {
+    window.localStorage.setItem(localPreviewStorageKey, JSON.stringify(state || {}));
+  }
+
+  function buildLocalPreviewAnalysis(documentItem, payload) {
+    var text = String(payload && (payload.textContent || payload.originalName) || "").toLowerCase();
+    var contractType = inferContractTypeFromName(documentItem && documentItem.original_name);
+    var hasPenalty = text.indexOf("multa") !== -1 || text.indexOf("penal") !== -1;
+    var hasExclusivity = text.indexOf("exclusiv") !== -1;
+    var hasDeadline = text.indexOf("prazo") !== -1 || text.indexOf("vigencia") !== -1;
+    var clauses = [
+      {
+        clause_number: "1",
+        clause_title: "Objeto do contrato",
+        severity: "safe",
+        confidence: "high",
+        original_text: "Define o escopo principal do acordo entre as partes.",
+        simplified_text: "Explica o que esta sendo contratado e qual e o objetivo do documento.",
+        why_it_matters: "Ajuda a confirmar se o contrato cobre exatamente o que voce espera."
+      },
+      {
+        clause_number: "2",
+        clause_title: hasPenalty ? "Multas e penalidades" : "Obrigacoes das partes",
+        severity: hasPenalty ? "critical" : "attention",
+        confidence: "medium",
+        original_text: hasPenalty
+          ? "Prevê multas e penalidades por descumprimento contratual."
+          : "Lista entregas, responsabilidades e condutas esperadas.",
+        simplified_text: hasPenalty
+          ? "Existe previsao de multa que merece revisao antes da assinatura."
+          : "As obrigacoes devem ser conferidas com cuidado para evitar desequilibrio.",
+        why_it_matters: hasPenalty
+          ? "Clausulas com multa podem gerar custo relevante ou risco juridico."
+          : "Obrigacoes mal distribuidas costumam gerar retrabalho e discussoes futuras."
+      },
+      {
+        clause_number: "3",
+        clause_title: hasExclusivity ? "Exclusividade" : hasDeadline ? "Prazo e vigencia" : "Rescisao",
+        severity: hasExclusivity ? "critical" : hasDeadline ? "attention" : "safe",
+        confidence: "medium",
+        original_text: hasExclusivity
+          ? "Impõe exclusividade durante a vigencia do contrato."
+          : hasDeadline
+            ? "Determina prazo de vigencia e renovacao."
+            : "Descreve as hipoteses de encerramento do contrato.",
+        simplified_text: hasExclusivity
+          ? "A exclusividade pode limitar sua liberdade comercial."
+          : hasDeadline
+            ? "O prazo precisa estar claro para evitar renovacoes indesejadas."
+            : "As condicoes de saida parecem objetivas.",
+        why_it_matters: hasExclusivity
+          ? "Exclusividade costuma exigir negociacao ou validacao juridica."
+          : hasDeadline
+            ? "Prazos e renovacoes automaticas sao pontos de revisao importantes."
+            : "Boas regras de rescisao reduzem risco operacional."
+      }
+    ];
+    var risks = clauses
+      .filter(function (clause) {
+        var severity = normalizeSeverity(clause && clause.severity);
+        return severity === "critical" || severity === "attention";
+      })
+      .map(function (clause) {
+        return {
+          clause_number: clause.clause_number,
+          title: clause.clause_title,
+          severity: clause.severity,
+          category: normalizeSeverity(clause.severity) === "critical" ? "Riscos criticos" : "Pontos de atencao",
+          impact_description: clause.why_it_matters,
+          simplified_explanation: clause.simplified_text,
+          original_excerpt: clause.original_text,
+          recommendation: normalizeSeverity(clause.severity) === "critical"
+            ? "Revisar com prioridade e considerar negociacao antes de assinar."
+            : "Validar esta clausula antes de seguir."
+        };
+      });
+    var riskScore = risks.reduce(function (total, risk) {
+      return total + (normalizeSeverity(risk.severity) === "critical" ? 38 : 18);
+    }, 12);
+    var now = new Date().toISOString();
+
+    return {
+      analysis: {
+        id: createLocalPreviewId("analysis"),
+        document_id: documentItem.id,
+        status: "completed",
+        contract_type: contractType,
+        risk_score: Math.max(0, Math.min(100, riskScore)),
+        summary: risks.length
+          ? "Analise local concluida com " + risks.length + " ponto" + (risks.length > 1 ? "s" : "") + " relevante" + (risks.length > 1 ? "s" : "") + " para revisar."
+          : "Analise local concluida sem alertas relevantes.",
+        recommendation: risks.some(function (risk) { return normalizeSeverity(risk.severity) === "critical"; })
+          ? "Revise as clausulas criticas antes de considerar a assinatura."
+          : "Valide os pontos destacados e siga para a revisao final.",
+        updated_at: now
+      },
+      clauses: clauses,
+      risks: risks
+    };
+  }
+
+  function buildLocalPreviewHealth(state) {
+    var documents = (state.documents || []).filter(function (documentItem) {
+      return !documentItem.deleted_at;
+    });
+    var analyses = state.analyses || {};
+    var completed = 0;
+    var failed = 0;
+    var pending = 0;
+    var latestFailure = null;
+
+    documents.forEach(function (documentItem) {
+      var status = String(documentItem.processing_status || "").toLowerCase();
+      if (status === "completed") completed += 1;
+      else if (status === "failed") failed += 1;
+      else pending += 1;
+
+      if (status === "failed" && !latestFailure) {
+        latestFailure = {
+          documentId: documentItem.id,
+          documentName: documentItem.original_name,
+          updatedAt: documentItem.updated_at || documentItem.created_at
+        };
+      }
+    });
+
+    return {
+      checks: {
+        privateStorageConfigured: true,
+        privateStorageMissingVars: [],
+        analysisRecentSuccess: completed > 0
+      },
+      operations: {
+        analyses: {
+          recentTotals: {
+            total: documents.length,
+            completed: completed,
+            failed: failed,
+            pending: pending
+          },
+          latestFailure: latestFailure
+        }
+      },
+      previewMode: true,
+      generatedAt: new Date().toISOString()
+    };
+  }
+
+  async function requestLocalPreview(url, options) {
+    var method = String(options && options.method || "GET").toUpperCase();
+    var state = getLocalPreviewState();
+    var match;
+    var documentId;
+    var body;
+    var documentItem;
+    var analysisPayload;
+    var now;
+
+    if (url === "/api/auth/me" && method === "GET") {
+      return { ok: true, status: 200, payload: { user: cloneLocalPreview(state.user) } };
+    }
+
+    if ((url === "/api/auth/login" || url === "/api/auth/register") && method === "POST") {
+      body = options && options.body ? JSON.parse(options.body) : {};
+      state.user = {
+        id: state.user && state.user.id ? state.user.id : createLocalPreviewId("user"),
+        full_name: String(body.fullName || body.email || "Preview local").split("@")[0],
+        email: body.email || "preview@clausee.local",
+        plan_code: "pro",
+        created_at: state.user && state.user.created_at ? state.user.created_at : new Date().toISOString()
+      };
+      saveLocalPreviewState(state);
+      return { ok: true, status: 200, payload: { user: cloneLocalPreview(state.user) } };
+    }
+
+    if (url === "/api/auth/logout" && method === "POST") {
+      state.user = {
+        id: "local-preview-user",
+        full_name: "Preview local",
+        email: "preview@clausee.local",
+        plan_code: "pro",
+        created_at: state.user && state.user.created_at ? state.user.created_at : new Date().toISOString()
+      };
+      saveLocalPreviewState(state);
+      return { ok: true, status: 200, payload: { ok: true } };
+    }
+
+    if (url === "/api/users/me" && method === "GET") {
+      return { ok: true, status: 200, payload: { user: cloneLocalPreview(state.user) } };
+    }
+
+    if (url === "/api/users/me" && method === "PATCH") {
+      body = options && options.body ? JSON.parse(options.body) : {};
+      state.user.full_name = body.fullName || state.user.full_name;
+      saveLocalPreviewState(state);
+      return {
+        ok: true,
+        status: 200,
+        payload: {
+          message: "Perfil salvo no modo local.",
+          user: cloneLocalPreview(state.user)
+        }
+      };
+    }
+
+    if (url === "/api/health" && method === "GET") {
+      return { ok: true, status: 200, payload: buildLocalPreviewHealth(state) };
+    }
+
+    if (url === "/api/documents" && method === "GET") {
+      return {
+        ok: true,
+        status: 200,
+        payload: {
+          documents: cloneLocalPreview(
+            state.documents.filter(function (item) {
+              return !item.deleted_at;
+            })
+          )
+        }
+      };
+    }
+
+    if (url === "/api/documents" && method === "POST") {
+      body = options && options.body ? JSON.parse(options.body) : {};
+      now = new Date().toISOString();
+      documentItem = {
+        id: createLocalPreviewId("doc"),
+        original_name: body.originalName || "contrato.txt",
+        processing_status: "completed",
+        created_at: now,
+        updated_at: now
+      };
+      analysisPayload = buildLocalPreviewAnalysis(documentItem, body);
+      state.documents.unshift(documentItem);
+      state.analyses[documentItem.id] = analysisPayload;
+      saveLocalPreviewState(state);
+      return {
+        ok: true,
+        status: 200,
+        payload: {
+          document: cloneLocalPreview(documentItem)
+        }
+      };
+    }
+
+    match = url.match(/^\/api\/documents\/([^/]+)\/analysis$/);
+    if (match && method === "GET") {
+      documentId = decodeURIComponent(match[1]);
+      analysisPayload = state.analyses[documentId];
+
+      if (!analysisPayload) {
+        return {
+          ok: false,
+          status: 400,
+          payload: { message: "No analysis found for this document." }
+        };
+      }
+
+      return { ok: true, status: 200, payload: cloneLocalPreview(analysisPayload) };
+    }
+
+    match = url.match(/^\/api\/documents\/([^/]+)\/restore$/);
+    if (match && method === "POST") {
+      documentId = decodeURIComponent(match[1]);
+      documentItem = state.documents.find(function (item) { return item.id === documentId; });
+
+      if (!documentItem) {
+        return { ok: false, status: 404, payload: { message: "Documento nao encontrado." } };
+      }
+
+      documentItem.deleted_at = null;
+      documentItem.updated_at = new Date().toISOString();
+      saveLocalPreviewState(state);
+      return { ok: true, status: 200, payload: { ok: true } };
+    }
+
+    match = url.match(/^\/api\/documents\/([^/]+)$/);
+    if (match && method === "DELETE") {
+      documentId = decodeURIComponent(match[1]);
+      documentItem = state.documents.find(function (item) { return item.id === documentId; });
+
+      if (!documentItem) {
+        return { ok: false, status: 404, payload: { message: "Documento nao encontrado." } };
+      }
+
+      documentItem.deleted_at = new Date().toISOString();
+      documentItem.updated_at = documentItem.deleted_at;
+      saveLocalPreviewState(state);
+      return { ok: true, status: 200, payload: { ok: true } };
+    }
+
+    if (url === "/api/analyses" && method === "POST") {
+      body = options && options.body ? JSON.parse(options.body) : {};
+      documentId = body.documentId;
+      documentItem = state.documents.find(function (item) { return item.id === documentId; });
+
+      if (!documentItem) {
+        return { ok: false, status: 404, payload: { message: "Documento nao encontrado." } };
+      }
+
+      analysisPayload = buildLocalPreviewAnalysis(documentItem, { originalName: documentItem.original_name });
+      state.analyses[documentId] = analysisPayload;
+      documentItem.processing_status = "completed";
+      documentItem.updated_at = analysisPayload.analysis.updated_at;
+      saveLocalPreviewState(state);
+      return { ok: true, status: 200, payload: cloneLocalPreview(analysisPayload) };
+    }
+
+    return {
+      ok: false,
+      status: 404,
+      payload: { message: "Rota indisponivel no modo local." }
+    };
+  }
+
   function buildRequestOptions(options) {
     var config = Object.assign({ credentials: "include" }, options || {});
     config.headers = Object.assign(
@@ -152,6 +526,10 @@
   }
 
   async function requestJsonDetailed(url, options) {
+    if (isLocalPreviewMode) {
+      return requestLocalPreview(url, options);
+    }
+
     var response = await fetch(url, buildRequestOptions(options));
     var payload = null;
 

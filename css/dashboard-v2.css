@@ -51,10 +51,10 @@ input,select,textarea{font-family:inherit}
 .login-screen{position:fixed;inset:0;background:linear-gradient(160deg,var(--navy) 0%,var(--navy-mid) 60%,#1a2e5a 100%);display:flex;align-items:center;justify-content:center;z-index:200}
 .login-screen.hidden{display:none}
 .login-card{background:var(--white);border-radius:18px;padding:40px;width:100%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,.35)}
-.login-logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;color:var(--navy);margin-bottom:28px}
-.login-logo svg{width:22px;height:22px;color:var(--blue)}
-.login-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
-.login-sub{font-size:14px;color:var(--neutral);margin-bottom:24px}
+.login-logo{display:flex;align-items:center;justify-content:center;margin-bottom:28px}
+.login-logo img{display:block;height:34px;width:auto;max-width:180px}
+.login-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px;text-align:center}
+.login-sub{font-size:14px;color:var(--neutral);margin-bottom:24px;text-align:center}
 .login-field{margin-bottom:16px}
 .login-label{display:block;font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:6px}
 .login-input{width:100%;padding:10px 14px;border:1.5px solid var(--neutral-4);border-radius:8px;font-size:14px;color:var(--text);background:var(--neutral-6);transition:border-color .2s}
@@ -77,8 +77,8 @@ input,select,textarea{font-family:inherit}
 
 /* â”€â”€ SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .sidebar-head{padding:0 16px;height:56px;display:flex;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)}
-.sidebar-logo{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:700;color:var(--white)}
-.sidebar-logo svg{width:20px;height:20px;color:#93c5fd}
+.sidebar-logo{display:flex;align-items:center;min-width:0}
+.sidebar-logo img{display:block;height:28px;width:auto;max-width:160px}
 .sidebar-nav{flex:1;padding:12px 8px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
 .nav-section-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:10px 10px 4px}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,.55);cursor:pointer;transition:all .15s;border:none;background:transparent;width:100%;text-align:left}

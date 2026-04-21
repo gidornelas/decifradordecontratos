@@ -47,9 +47,11 @@ img{display:block;max-width:100%}
 .navbar{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 24px;transition:background .3s,box-shadow .3s;height:64px;display:flex;align-items:center}
 .navbar.scrolled{background:rgba(255,255,255,.96);backdrop-filter:blur(12px);box-shadow:0 1px 0 var(--neutral-4)}
 .navbar__inner{max-width:1120px;width:100%;margin:0 auto;display:flex;align-items:center;gap:32px}
-.navbar__logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;color:var(--white);letter-spacing:-.01em;transition:color .2s}
-.navbar.scrolled .navbar__logo{color:var(--text)}
-.navbar__logo svg{width:22px;height:22px}
+.navbar__logo{display:flex;align-items:center;min-width:0}
+.navbar__logo-img{display:block;height:28px;width:auto;max-width:170px}
+.navbar__logo-img--dark{display:none}
+.navbar.scrolled .navbar__logo-img--light{display:none}
+.navbar.scrolled .navbar__logo-img--dark{display:block}
 .navbar__links{display:flex;align-items:center;gap:4px;margin-left:auto}
 .navbar__link{padding:6px 14px;font-size:14px;font-weight:500;color:rgba(255,255,255,.75);border-radius:8px;transition:color .2s,background .2s}
 .navbar.scrolled .navbar__link{color:var(--text-2)}
@@ -288,8 +290,8 @@ img{display:block;max-width:100%}
 /* â”€â”€ FOOTER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .footer{background:#080f1c;padding:48px 0 32px;color:rgba(255,255,255,.5)}
 .footer__inner{display:grid;grid-template-columns:1fr auto;gap:40px;margin-bottom:40px}
-.footer__brand{display:flex;align-items:center;gap:10px;color:var(--white);font-size:16px;font-weight:700;margin-bottom:10px}
-.footer__brand svg{width:20px;height:20px;color:var(--blue)}
+.footer__brand{display:flex;align-items:center;margin-bottom:10px}
+.footer__brand img{display:block;height:30px;width:auto;max-width:170px}
 .footer__desc{font-size:13px;line-height:1.65;max-width:300px}
 .footer__links{display:flex;gap:48px}
 .footer__links-group h4{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:14px}

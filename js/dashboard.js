@@ -1120,6 +1120,22 @@
     closeMobileNav();
   }
 
+  function openAnalyzeUploadEntry() {
+    switchPage("analyze");
+    resetUploadUi();
+
+    if (analysisResult) {
+      analysisResult.classList.remove("visible");
+    }
+
+    if (uploadZone) {
+      uploadZone.style.display = "";
+      if (typeof uploadZone.scrollIntoView === "function") {
+        uploadZone.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }
+
   function getVisiblePageName() {
     var activePage = document.querySelector(".page.active");
     if (!activePage || !activePage.id) {
@@ -4846,6 +4862,11 @@ function readFilePayload(file) {
 
     navButtons.forEach(function (button) {
       button.addEventListener("click", function () {
+        if (button.getAttribute("data-upload-shortcut") === "true") {
+          openAnalyzeUploadEntry();
+          return;
+        }
+
         switchPage(button.getAttribute("data-nav"));
       });
     });
@@ -4861,6 +4882,11 @@ function readFilePayload(file) {
 
       if (documentId) {
         openDocument(documentId, targetPage);
+        return;
+      }
+
+      if (trigger.getAttribute("data-upload-shortcut") === "true") {
+        openAnalyzeUploadEntry();
         return;
       }
 

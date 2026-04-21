@@ -1123,6 +1123,7 @@
   function openAnalyzeUploadEntry() {
     switchPage("analyze");
     resetUploadUi();
+    currentDocumentId = "";
 
     if (analysisResult) {
       analysisResult.classList.remove("visible");
@@ -4359,7 +4360,7 @@ function readFilePayload(file) {
   }
 
   function openAnalyzeUploadPicker() {
-    switchPage("analyze");
+    openAnalyzeUploadEntry();
 
     if (fileInput) {
       fileInput.click();
@@ -4371,7 +4372,7 @@ function readFilePayload(file) {
       return;
     }
 
-    switchPage("analyze");
+    openAnalyzeUploadEntry();
     uploadSelectedFile(file);
   }
 

@@ -3,6 +3,8 @@ var auth = require("../../lib/auth");
 var db = require("../../lib/db");
 var observability = require("../../lib/observability");
 
+var ANALYSIS_KIND_RECEIVED = "received_contract_review";
+
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
     return http.methodNotAllowed(res, ["GET"]);
@@ -33,9 +35,10 @@ module.exports = async function handler(req, res) {
         "join analyses a on a.id = r.analysis_id",
         "join documents d on d.id = a.document_id",
         "where a.user_id = $1 and d.deleted_at is null",
+        "and coalesce(a.analysis_kind, $2) = $2",
         "group by severity"
       ].join(" "),
-      [currentUserId]
+      [currentUserId, ANALYSIS_KIND_RECEIVED]
     );
 
     var distribution = {

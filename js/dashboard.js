@@ -61,6 +61,10 @@
   var uploadZone = document.getElementById("upload-zone");
   var fileInput = document.getElementById("file-input");
   var uploadChooseBtn = document.getElementById("upload-choose-btn");
+  var pastedContractNameInput = document.getElementById("pasted-contract-name");
+  var pastedContractTextInput = document.getElementById("pasted-contract-text");
+  var pastedContractSubmitBtn = document.getElementById("pasted-contract-submit-btn");
+  var pastedContractClearBtn = document.getElementById("pasted-contract-clear-btn");
   var uploadProgress = document.getElementById("upload-progress");
   var progressFill = document.getElementById("progress-fill");
   var progressText = document.getElementById("progress-text");
@@ -73,6 +77,32 @@
   var shareResultsBtn = document.getElementById("share-results-btn");
   var copyResultsBtn = document.getElementById("copy-results-btn");
   var resultsFeedback = document.getElementById("results-feedback");
+  var outboundContractSelect = document.getElementById("outbound-contract-select");
+  var outboundProposalSelect = document.getElementById("outbound-proposal-select");
+  var outboundCompareContractSelect = document.getElementById("outbound-compare-contract-select");
+  var outboundCompareProposalSelect = document.getElementById("outbound-compare-proposal-select");
+  var outboundNotesInput = document.getElementById("outbound-notes");
+  var outboundStartButton = document.getElementById("outbound-start-btn");
+  var outboundFeedback = document.getElementById("outbound-feedback");
+  var outboundCompareScore = document.getElementById("outbound-compare-score");
+  var outboundCompareLabel = document.getElementById("outbound-compare-label");
+  var outboundCompareDesc = document.getElementById("outbound-compare-desc");
+  var outboundCompareContractName = document.getElementById("outbound-compare-contract-name");
+  var outboundCompareProposalName = document.getElementById("outbound-compare-proposal-name");
+  var outboundCompareMismatchCount = document.getElementById("outbound-compare-mismatch-count");
+  var outboundComparisonTable = document.getElementById("outbound-comparison-table");
+  var outboundIssuesGrid = document.getElementById("outbound-issues-grid");
+  var outboundChecklistList = document.getElementById("outbound-checklist-list");
+  var outboundVerdictScore = document.getElementById("outbound-verdict-score");
+  var outboundVerdictLabel = document.getElementById("outbound-verdict-label");
+  var outboundVerdictDesc = document.getElementById("outbound-verdict-desc");
+  var outboundVerdictReadiness = document.getElementById("outbound-verdict-readiness");
+  var outboundVerdictCriticalCount = document.getElementById("outbound-verdict-critical-count");
+  var outboundVerdictAttentionCount = document.getElementById("outbound-verdict-attention-count");
+  var outboundVerdictTitle = document.getElementById("outbound-verdict-title");
+  var outboundVerdictText = document.getElementById("outbound-verdict-text");
+  var outboundVerdictGoodList = document.getElementById("outbound-verdict-good-list");
+  var outboundVerdictBlockersList = document.getElementById("outbound-verdict-blockers-list");
   var analysisFlowTabs = Array.prototype.slice.call(document.querySelectorAll(".analysis-flow-tab"));
   var settingsFullNameInput = document.getElementById("settings-full-name");
   var settingsEmailInput = document.getElementById("settings-email");
@@ -113,6 +143,9 @@
   var currentUser = null;
   var currentRiskFilter = "all";
   var currentGuidedTab = "resumo";
+  var currentOutboundContractId = "";
+  var currentOutboundProposalId = "";
+  var currentOutboundAnalysis = null;
   var settingsLoaded = false;
   var latestHealthSnapshot = null;
   var mobileNavBreakpoint = window.matchMedia("(max-width: 980px)");
@@ -137,7 +170,11 @@
     risks: "Riscos",
     guided: "Leitura Guiada",
     results: "Resultados",
-    settings: "Configurações"
+    settings: "Configurações",
+    "outbound-validate": "Validar contrato",
+    "outbound-compare": "Comparar com proposta",
+    "outbound-issues": "Pendencias para envio",
+    "outbound-verdict": "Parecer final"
   };
 
   pageTitles = Object.assign({}, pageTitles, {
@@ -148,7 +185,11 @@
     risks: "Riscos do contrato",
     guided: "Revisao guiada",
     results: "Resumo final",
-    settings: "Conta"
+    settings: "Conta",
+    "outbound-validate": "Validar contrato",
+    "outbound-compare": "Comparar com proposta",
+    "outbound-issues": "Pendencias para envio",
+    "outbound-verdict": "Parecer final"
   });
 
   var isLocalPreviewMode = window.location.protocol === "file:";
@@ -209,6 +250,7 @@
     parsed.user = parsed.user && typeof parsed.user === "object" ? parsed.user : fallbackUser;
     parsed.documents = Array.isArray(parsed.documents) ? parsed.documents : [];
     parsed.analyses = parsed.analyses && typeof parsed.analyses === "object" ? parsed.analyses : {};
+    parsed.outboundAnalyses = Array.isArray(parsed.outboundAnalyses) ? parsed.outboundAnalyses : [];
 
     return parsed;
   }
@@ -311,6 +353,99 @@
       },
       clauses: clauses,
       risks: risks
+    };
+  }
+
+  function buildLocalPreviewOutboundAnalysis(contractDocument, proposalDocument, notes) {
+    var contractName = String(contractDocument && contractDocument.original_name || "").toLowerCase();
+    var proposalName = String(proposalDocument && proposalDocument.original_name || "").toLowerCase();
+    var now = new Date().toISOString();
+    var hasValueMismatch = contractName.indexOf("final") !== -1 || proposalName.indexOf("v3") !== -1;
+    var issues = [
+      {
+        id: createLocalPreviewId("out-issue"),
+        issue_type: hasValueMismatch ? "proposal_mismatch" : "send_readiness",
+        severity: hasValueMismatch ? "critical" : "attention",
+        title: hasValueMismatch ? "Valor divergente da proposta" : "Revisar blocos finais antes do envio",
+        description: hasValueMismatch
+          ? "O contrato final parece ter sido ajustado depois da proposta e precisa de confirmacao antes do envio."
+          : "O documento precisa de uma ultima revisao operacional antes de seguir ao cliente.",
+        source_excerpt: contractDocument && contractDocument.original_name ? contractDocument.original_name : "",
+        reference_excerpt: proposalDocument && proposalDocument.original_name ? proposalDocument.original_name : "",
+        recommended_fix: hasValueMismatch
+          ? "Confirmar valor aprovado internamente e alinhar a versao final do contrato."
+          : "Revisar dados variaveis, assinatura e escopo prometido."
+      },
+      {
+        id: createLocalPreviewId("out-issue"),
+        issue_type: "missing_information",
+        severity: "attention",
+        title: "Escopo prometido precisa aparecer no contrato",
+        description: "Use a proposta como check-list para garantir que onboarding, prazo e entregas estejam escritos.",
+        source_excerpt: "Escopo contratual",
+        reference_excerpt: "Escopo comercial",
+        recommended_fix: "Comparar o que foi prometido com o texto final antes de enviar."
+      }
+    ];
+    var matchedPoints = [
+      {
+        topic: "Prazo principal",
+        proposalText: "Prazo comercial acordado",
+        contractText: "Prazo refletido no contrato",
+        status: "aligned"
+      }
+    ];
+    var missingPoints = [
+      {
+        topic: hasValueMismatch ? "Valor comercial" : "Escopo complementar",
+        proposalText: "Ponto previsto na proposta",
+        contractText: hasValueMismatch ? "Valor da versao final a confirmar" : "Texto contratual ainda generico",
+        status: hasValueMismatch ? "mismatch" : "missing"
+      }
+    ];
+    var checklist = [
+      {
+        title: "Validar coerencia proposta x contrato",
+        description: "Conferir se a versao final do contrato segue o combinado comercial.",
+        status: "pending"
+      },
+      {
+        title: "Revisar campos finais e assinatura",
+        description: notes && String(notes).trim() ? "Levar em conta as observacoes internas informadas." : "Confirmar dados finais antes do envio.",
+        status: "pending"
+      }
+    ];
+    var finalVerdict = hasValueMismatch ? "not_ready" : "ready_with_notes";
+
+    return {
+      analysis: {
+        id: createLocalPreviewId("outbound"),
+        document_id: contractDocument.id,
+        source_document_id: contractDocument.id,
+        reference_document_id: proposalDocument.id,
+        source_document_name: contractDocument.original_name,
+        reference_document_name: proposalDocument.original_name,
+        status: "completed",
+        analysis_kind: "outbound_contract_review",
+        analysis_perspective: "sender",
+        contract_type: "Contrato",
+        summary: "Validacao local concluida para revisar coerencia antes do envio ao cliente.",
+        recommendation: hasValueMismatch
+          ? "Nao envie enquanto os pontos criticos nao forem alinhados."
+          : "Envie somente depois de revisar os ajustes destacados.",
+        final_verdict: finalVerdict,
+        proposal_consistency_score: hasValueMismatch ? 68 : 84,
+        send_readiness_score: hasValueMismatch ? 54 : 74,
+        executive_recommendation: hasValueMismatch
+          ? "A versao final ainda pede ajuste antes do envio."
+          : "A base esta boa, mas vale revisar os detalhes finais.",
+        internal_notes: notes || "",
+        updated_at: now
+      },
+      issues: issues,
+      checklist: checklist,
+      matchedPoints: matchedPoints,
+      missingPoints: missingPoints
     };
   }
 
@@ -522,6 +657,71 @@
       return { ok: true, status: 200, payload: cloneLocalPreview(analysisPayload) };
     }
 
+    if (url === "/api/outbound-analyses" && method === "POST") {
+      body = options && options.body ? JSON.parse(options.body) : {};
+      var contractDocumentId = body.contractDocumentId;
+      var proposalDocumentId = body.proposalDocumentId;
+      var notes = body.internalNotes || "";
+      var contractDocument = state.documents.find(function (item) { return item.id === contractDocumentId && !item.deleted_at; });
+      var proposalDocument = state.documents.find(function (item) { return item.id === proposalDocumentId && !item.deleted_at; });
+
+      if (!contractDocument) {
+        return { ok: false, status: 404, payload: { message: "Contract document not found." } };
+      }
+
+      if (!proposalDocument) {
+        return { ok: false, status: 404, payload: { message: "Proposal document not found." } };
+      }
+
+      if (contractDocument.id === proposalDocument.id) {
+        return { ok: false, status: 400, payload: { message: "Contract document and proposal document must be different files." } };
+      }
+
+      analysisPayload = buildLocalPreviewOutboundAnalysis(contractDocument, proposalDocument, notes);
+      state.outboundAnalyses = state.outboundAnalyses.filter(function (item) {
+        var analysis = item && item.analysis ? item.analysis : {};
+        return !(
+          analysis.source_document_id === contractDocument.id &&
+          analysis.reference_document_id === proposalDocument.id
+        );
+      });
+      state.outboundAnalyses.unshift(analysisPayload);
+      saveLocalPreviewState(state);
+      return { ok: true, status: 201, payload: cloneLocalPreview(analysisPayload) };
+    }
+
+    match = url.match(/^\/api\/outbound-analyses\/([^/]+)$/);
+    if (match && method === "GET") {
+      var outboundAnalysisId = decodeURIComponent(match[1]);
+      var outboundAnalysis = state.outboundAnalyses.find(function (item) {
+        return item && item.analysis && item.analysis.id === outboundAnalysisId;
+      });
+
+      if (!outboundAnalysis) {
+        return { ok: false, status: 404, payload: { message: "Outbound analysis not found." } };
+      }
+
+      return { ok: true, status: 200, payload: cloneLocalPreview(outboundAnalysis) };
+    }
+
+    match = url.match(/^\/api\/documents\/([^/]+)\/outbound-analysis$/);
+    if (match && method === "GET") {
+      documentId = decodeURIComponent(match[1]);
+      var latestOutboundAnalysis = state.outboundAnalyses.find(function (item) {
+        return item && item.analysis && item.analysis.source_document_id === documentId;
+      });
+
+      if (!latestOutboundAnalysis) {
+        return {
+          ok: false,
+          status: 400,
+          payload: { message: "No outbound analysis found for this document." }
+        };
+      }
+
+      return { ok: true, status: 200, payload: cloneLocalPreview(latestOutboundAnalysis) };
+    }
+
     return {
       ok: false,
       status: 404,
@@ -697,6 +897,9 @@
     currentAuditEventFilter = "all";
     documentSeverityCache = {};
     isAnalyzeUploadMode = false;
+    currentOutboundContractId = "";
+    currentOutboundProposalId = "";
+    currentOutboundAnalysis = null;
     analysisRenderSequence += 1;
     selectedDocumentIds = {};
     deletingDocumentIds = {};
@@ -708,6 +911,7 @@
     setSettingsFeedback("", "");
     setResultsFeedback("", "");
     setDocumentsFeedback("", "");
+    setOutboundFeedback("", "");
     setCurrentUser(null);
 
     if (dashboardSearchInput) {
@@ -727,6 +931,9 @@
     }
     if (auditEventFilter) {
       auditEventFilter.value = "all";
+    }
+    if (outboundNotesInput) {
+      outboundNotesInput.value = "";
     }
 
     syncDocumentViews([]);
@@ -878,6 +1085,23 @@
 
   function setDocumentsFeedback(message, tone) {
     setInlineFeedback(documentsFeedback, "documents", message, tone);
+  }
+
+  function setOutboundFeedback(message, tone) {
+    if (!outboundFeedback) {
+      return;
+    }
+
+    if (!message) {
+      outboundFeedback.hidden = true;
+      outboundFeedback.textContent = "";
+      outboundFeedback.removeAttribute("data-tone");
+      return;
+    }
+
+    outboundFeedback.hidden = false;
+    outboundFeedback.textContent = message;
+    outboundFeedback.setAttribute("data-tone", tone || "info");
   }
 
   function setDocumentsUndoFeedback(message, onUndo) {
@@ -1116,6 +1340,10 @@
 
     if (pageName === "settings") {
       loadSettingsProfile(false);
+    }
+
+    if (pageName.indexOf("outbound-") === 0) {
+      handleOutboundPageActivated(pageName);
     }
 
     if (pageName !== "results") {
@@ -1909,6 +2137,396 @@
       option.textContent = documentItem.original_name || "documento";
       selectElement.appendChild(option);
     });
+  }
+
+  function chooseDefaultOutboundContractId() {
+    return currentDocuments.length ? currentDocuments[0].id : "";
+  }
+
+  function chooseDefaultOutboundProposalId(contractId) {
+    var candidate = currentDocuments.find(function (item) {
+      return item && item.id && item.id !== contractId;
+    });
+
+    return candidate ? candidate.id : "";
+  }
+
+  function updateOutboundSelectValues() {
+    if (outboundContractSelect) {
+      outboundContractSelect.value = currentOutboundContractId || "";
+    }
+    if (outboundProposalSelect) {
+      outboundProposalSelect.value = currentOutboundProposalId || "";
+    }
+    if (outboundCompareContractSelect) {
+      outboundCompareContractSelect.value = currentOutboundContractId || "";
+    }
+    if (outboundCompareProposalSelect) {
+      outboundCompareProposalSelect.value = currentOutboundProposalId || "";
+    }
+  }
+
+  function setOutboundSelectionValues(contractId, proposalId) {
+    currentOutboundContractId = contractId || chooseDefaultOutboundContractId();
+    currentOutboundProposalId = proposalId || chooseDefaultOutboundProposalId(currentOutboundContractId);
+
+    if (currentOutboundProposalId === currentOutboundContractId) {
+      currentOutboundProposalId = chooseDefaultOutboundProposalId(currentOutboundContractId);
+    }
+
+    updateOutboundSelectValues();
+  }
+
+  function renderOutboundDocumentOptions(documents) {
+    var items = Array.isArray(documents) ? documents : [];
+
+    [outboundContractSelect, outboundProposalSelect, outboundCompareContractSelect, outboundCompareProposalSelect].forEach(function (select) {
+      renderSelectOptions(select, items);
+    });
+
+    if (!items.length) {
+      setOutboundSelectionValues("", "");
+    } else {
+      setOutboundSelectionValues(
+        items.some(function (item) { return item.id === currentOutboundContractId; }) ? currentOutboundContractId : chooseDefaultOutboundContractId(),
+        items.some(function (item) { return item.id === currentOutboundProposalId && item.id !== currentOutboundContractId; })
+          ? currentOutboundProposalId
+          : chooseDefaultOutboundProposalId(currentOutboundContractId || chooseDefaultOutboundContractId())
+      );
+    }
+
+    if (outboundStartButton) {
+      outboundStartButton.disabled = items.length < 2;
+    }
+  }
+
+  function getOutboundIssues(payload) {
+    return Array.isArray(payload && payload.issues) ? payload.issues : [];
+  }
+
+  function getOutboundChecklist(payload) {
+    return Array.isArray(payload && payload.checklist) ? payload.checklist : [];
+  }
+
+  function getOutboundMatchedPoints(payload) {
+    return Array.isArray(payload && payload.matchedPoints) ? payload.matchedPoints : [];
+  }
+
+  function getOutboundMissingPoints(payload) {
+    return Array.isArray(payload && payload.missingPoints) ? payload.missingPoints : [];
+  }
+
+  function getOutboundVerdictLabel(verdict) {
+    if (verdict === "ready_to_send") {
+      return "Pronto para enviar";
+    }
+    if (verdict === "not_ready") {
+      return "Nao enviar ainda";
+    }
+    return "Enviar com ressalvas";
+  }
+
+  function getOutboundVerdictDescription(verdict, issueCounts) {
+    if (verdict === "ready_to_send") {
+      return "O contrato esta consistente para envio ao cliente.";
+    }
+    if (verdict === "not_ready") {
+      return "Ainda existem bloqueios antes do envio ao cliente.";
+    }
+    return "Ha base para envio, mas com ajustes a resolver antes do disparo.";
+  }
+
+  function getOutboundCompareLabel(score) {
+    if (score >= 85) {
+      return "Coerencia alta";
+    }
+    if (score >= 65) {
+      return "Coerencia boa, com ajustes";
+    }
+    return "Coerencia baixa";
+  }
+
+  function getOutboundCompareDescription(score, mismatchCount) {
+    if (mismatchCount <= 0) {
+      return "Os pontos principais parecem alinhados entre proposta e contrato.";
+    }
+    if (score >= 65) {
+      return "A maior parte do combinado aparece no contrato, mas ainda ha desvios relevantes.";
+    }
+    return "Existem divergencias importantes entre proposta e contrato.";
+  }
+
+  function getOutboundIssueCounts(issues) {
+    return (Array.isArray(issues) ? issues : []).reduce(function (counts, issue) {
+      var severity = normalizeSeverity(issue && issue.severity);
+      if (severity === "critical") {
+        counts.critical += 1;
+      } else if (severity === "attention") {
+        counts.attention += 1;
+      } else {
+        counts.safe += 1;
+      }
+      return counts;
+    }, { critical: 0, attention: 0, safe: 0 });
+  }
+
+  function normalizeComparisonStatus(defaultStatus, value) {
+    var normalized = String(value || defaultStatus || "aligned").toLowerCase();
+
+    if (normalized === "aligned" || normalized === "missing" || normalized === "mismatch") {
+      return normalized;
+    }
+
+    return defaultStatus || "aligned";
+  }
+
+  function renderOutboundEmptyState(message) {
+    if (outboundCompareScore) {
+      outboundCompareScore.textContent = "0";
+    }
+    if (outboundCompareLabel) {
+      outboundCompareLabel.textContent = "Aguardando validacao";
+    }
+    if (outboundCompareDesc) {
+      outboundCompareDesc.textContent = message || "Selecione contrato e proposta para iniciar a validacao.";
+    }
+    if (outboundCompareContractName) {
+      outboundCompareContractName.textContent = currentOutboundContractId ? (findDocumentById(currentOutboundContractId) || {}).original_name || "Contrato" : "Contrato";
+    }
+    if (outboundCompareProposalName) {
+      outboundCompareProposalName.textContent = currentOutboundProposalId ? (findDocumentById(currentOutboundProposalId) || {}).original_name || "Proposta" : "Proposta";
+    }
+    if (outboundCompareMismatchCount) {
+      outboundCompareMismatchCount.textContent = "Sem dados";
+    }
+    if (outboundComparisonTable) {
+      outboundComparisonTable.innerHTML = '<div class="table-empty">' + escapeHtml(message || "Selecione contrato e proposta para iniciar a validacao.") + "</div>";
+    }
+    if (outboundIssuesGrid) {
+      outboundIssuesGrid.innerHTML = '<div class="table-empty">' + escapeHtml(message || "Ainda nao ha pendencias carregadas.") + "</div>";
+    }
+    if (outboundChecklistList) {
+      outboundChecklistList.innerHTML = '<div class="table-empty">' + escapeHtml(message || "A checklist aparecera apos a validacao.") + "</div>";
+    }
+    if (outboundVerdictScore) {
+      outboundVerdictScore.textContent = "0";
+    }
+    if (outboundVerdictLabel) {
+      outboundVerdictLabel.textContent = "Parecer indisponivel";
+    }
+    if (outboundVerdictDesc) {
+      outboundVerdictDesc.textContent = "Execute a validacao para obter a prontidao de envio.";
+    }
+    if (outboundVerdictReadiness) {
+      outboundVerdictReadiness.textContent = "0/100";
+    }
+    if (outboundVerdictCriticalCount) {
+      outboundVerdictCriticalCount.textContent = "0 bloqueadores";
+    }
+    if (outboundVerdictAttentionCount) {
+      outboundVerdictAttentionCount.textContent = "0 ajustes";
+    }
+    if (outboundVerdictTitle) {
+      outboundVerdictTitle.textContent = "Aguardando validacao";
+    }
+    if (outboundVerdictText) {
+      outboundVerdictText.textContent = message || "Assim que a validacao rodar, este parecer sera preenchido.";
+    }
+    if (outboundVerdictGoodList) {
+      outboundVerdictGoodList.innerHTML = "";
+    }
+    if (outboundVerdictBlockersList) {
+      outboundVerdictBlockersList.innerHTML = "";
+    }
+  }
+
+  function renderOutboundCompareView(payload) {
+    var analysis = payload && payload.analysis ? payload.analysis : {};
+    var matchedPoints = getOutboundMatchedPoints(payload);
+    var missingPoints = getOutboundMissingPoints(payload);
+    var mismatchCount = missingPoints.length;
+
+    if (outboundCompareScore) {
+      outboundCompareScore.textContent = String(Number(analysis.proposal_consistency_score) || 0);
+    }
+    if (outboundCompareLabel) {
+      outboundCompareLabel.textContent = getOutboundCompareLabel(Number(analysis.proposal_consistency_score) || 0);
+    }
+    if (outboundCompareDesc) {
+      outboundCompareDesc.textContent = getOutboundCompareDescription(Number(analysis.proposal_consistency_score) || 0, mismatchCount);
+    }
+    if (outboundCompareContractName) {
+      outboundCompareContractName.textContent = analysis.source_document_name || "Contrato";
+    }
+    if (outboundCompareProposalName) {
+      outboundCompareProposalName.textContent = analysis.reference_document_name || "Proposta";
+    }
+    if (outboundCompareMismatchCount) {
+      outboundCompareMismatchCount.textContent = mismatchCount + " ponto" + (mismatchCount === 1 ? "" : "s") + " principal" + (mismatchCount === 1 ? "" : "is");
+    }
+    if (!outboundComparisonTable) {
+      return;
+    }
+
+    var rows = [];
+    matchedPoints.forEach(function (item) {
+      rows.push(createOutboundComparisonRow(item, "aligned"));
+    });
+    missingPoints.forEach(function (item) {
+      rows.push(createOutboundComparisonRow(item, item && item.status ? item.status : "missing"));
+    });
+
+    if (!rows.length) {
+      outboundComparisonTable.innerHTML = '<div class="table-empty">A comparacao aparecera aqui assim que a validacao for concluida.</div>';
+      return;
+    }
+
+    outboundComparisonTable.innerHTML =
+      '<div class="table-head"><span>Tema</span><span>Proposta</span><span>Contrato</span><span>Status</span><span>Acao</span></div>' +
+      rows.join("");
+  }
+
+  function createOutboundComparisonRow(item, fallbackStatus) {
+    var status = normalizeComparisonStatus(fallbackStatus, item && item.status);
+    var badgeClass = status === "aligned"
+      ? "badge badge--safe"
+      : status === "mismatch"
+        ? "badge badge--critical"
+        : "badge badge--attention";
+    var badgeLabel = status === "aligned" ? "Coerente" : status === "mismatch" ? "Divergente" : "Ausente";
+    var actionPage = status === "aligned" ? "outbound-verdict" : "outbound-issues";
+
+    return [
+      '<div class="table-row">',
+      '<span class="table-type">' + escapeHtml(item && item.topic ? item.topic : "Ponto") + "</span>",
+      '<span class="table-date">' + escapeHtml(item && item.proposalText ? item.proposalText : "Nao informado") + "</span>",
+      '<span class="table-date">' + escapeHtml(item && item.contractText ? item.contractText : "Nao identificado") + "</span>",
+      '<span class="' + badgeClass + '"><span class="badge-dot"></span>' + escapeHtml(badgeLabel) + "</span>",
+      '<span class="table-actions"><button class="table-action-btn" data-nav="' + escapeHtml(actionPage) + '" type="button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span>',
+      "</div>"
+    ].join("");
+  }
+
+  function renderOutboundIssuesView(payload) {
+    var issues = getOutboundIssues(payload);
+    var checklist = getOutboundChecklist(payload);
+
+    if (outboundIssuesGrid) {
+      outboundIssuesGrid.innerHTML = issues.length
+        ? issues.map(createOutboundIssueCardMarkup).join("")
+        : '<div class="table-empty">Nenhuma pendencia relevante foi identificada nesta validacao.</div>';
+    }
+
+    if (outboundChecklistList) {
+      outboundChecklistList.innerHTML = checklist.length
+        ? checklist.map(createOutboundChecklistItemMarkup).join("")
+        : '<div class="table-empty">Nenhuma checklist disponivel para esta validacao.</div>';
+    }
+  }
+
+  function createOutboundIssueCardMarkup(issue) {
+    var severity = normalizeSeverity(issue && issue.severity);
+    var severityLabel = severity === "critical" ? "Critico" : severity === "attention" ? "Atencao" : "Seguro";
+    var cardClass = severity === "critical" ? "risk-card risk-card--critical" : severity === "attention" ? "risk-card risk-card--attention" : "risk-card risk-card--safe";
+    var badgeClass = severity === "critical" ? "risk-badge risk-badge--critical" : severity === "attention" ? "risk-badge risk-badge--attention" : "risk-badge risk-badge--safe";
+
+    return [
+      '<div class="' + cardClass + '">',
+      '<div class="risk-card__head"><span class="' + badgeClass + '">' + escapeHtml(severityLabel) + '</span><span class="risk-clause">' + escapeHtml(issue && issue.issue_type ? String(issue.issue_type).replace(/_/g, " ") : "pendencia") + "</span></div>",
+      "<h3>" + escapeHtml(issue && issue.title ? issue.title : "Ponto para revisar") + "</h3>",
+      "<p>" + escapeHtml(issue && issue.description ? issue.description : "Sem descricao adicional.") + "</p>",
+      issue && issue.recommended_fix
+        ? '<div class="risk-card__footer"><span class="risk-source">' + escapeHtml(issue.recommended_fix) + "</span></div>"
+        : "",
+      "</div>"
+    ].join("");
+  }
+
+  function createOutboundChecklistItemMarkup(item) {
+    return [
+      '<div class="checklist-item"><label class="checklist-label"><input type="checkbox"' + ((item && item.status) === "done" ? " checked" : "") + '><div><div class="checklist-title">' + escapeHtml(item && item.title ? item.title : "Item") + "</div><div class=\"checklist-desc\">" + escapeHtml(item && item.description ? item.description : "Sem detalhes adicionais.") + "</div></div></label></div>"
+    ].join("");
+  }
+
+  function renderOutboundVerdictView(payload) {
+    var analysis = payload && payload.analysis ? payload.analysis : {};
+    var issues = getOutboundIssues(payload);
+    var matchedPoints = getOutboundMatchedPoints(payload);
+    var counts = getOutboundIssueCounts(issues);
+    var verdictLabel = getOutboundVerdictLabel(analysis.final_verdict);
+    var verdictDescription = getOutboundVerdictDescription(analysis.final_verdict, counts);
+    var blockerIssues = issues.filter(function (item) {
+      return normalizeSeverity(item && item.severity) === "critical";
+    });
+
+    if (outboundVerdictScore) {
+      outboundVerdictScore.textContent = String(Number(analysis.send_readiness_score) || 0);
+    }
+    if (outboundVerdictLabel) {
+      outboundVerdictLabel.textContent = verdictLabel;
+    }
+    if (outboundVerdictDesc) {
+      outboundVerdictDesc.textContent = verdictDescription;
+    }
+    if (outboundVerdictReadiness) {
+      outboundVerdictReadiness.textContent = String(Number(analysis.send_readiness_score) || 0) + "/100";
+    }
+    if (outboundVerdictCriticalCount) {
+      outboundVerdictCriticalCount.textContent = counts.critical + " bloqueador" + (counts.critical === 1 ? "" : "es");
+    }
+    if (outboundVerdictAttentionCount) {
+      outboundVerdictAttentionCount.textContent = counts.attention + " ajuste" + (counts.attention === 1 ? "" : "s");
+    }
+    if (outboundVerdictTitle) {
+      outboundVerdictTitle.textContent = verdictLabel;
+    }
+    if (outboundVerdictText) {
+      outboundVerdictText.textContent = analysis.executive_recommendation || analysis.recommendation || analysis.summary || "Sem parecer executivo disponivel.";
+    }
+    if (outboundVerdictGoodList) {
+      outboundVerdictGoodList.innerHTML = matchedPoints.length
+        ? matchedPoints.slice(0, 3).map(function (item, index) {
+          return createOutboundVerdictActivityMarkup(item, "safe", index === 0, "Ponto alinhado");
+        }).join("")
+        : createOutboundVerdictActivityMarkup({ topic: "Base contratual", contractText: "A estrutura principal esta disponivel para revisao." }, "safe", true, "Ponto alinhado");
+    }
+    if (outboundVerdictBlockersList) {
+      outboundVerdictBlockersList.innerHTML = blockerIssues.length
+        ? blockerIssues.slice(0, 3).map(function (item, index) {
+          return createOutboundVerdictActivityMarkup({ topic: item.title, contractText: item.recommended_fix || item.description }, "danger", index === 0, "Bloqueio");
+        }).join("")
+        : createOutboundVerdictActivityMarkup({ topic: "Sem bloqueios criticos", contractText: "A validacao nao encontrou impedimentos criticos." }, "safe", true, "Status");
+    }
+  }
+
+  function createOutboundVerdictActivityMarkup(item, tone, isFirst, label) {
+    return [
+      '<div class="activity-item"' + (isFirst ? ' style="margin-top:16px"' : "") + ">",
+      '<span class="activity-dot activity-dot--' + escapeHtml(tone) + '"></span>',
+      "<div>",
+      '<div class="activity-text"><strong>' + escapeHtml(item && item.topic ? item.topic : (label || "Ponto")) + "</strong></div>",
+      '<div class="activity-time">' + escapeHtml(item && item.contractText ? item.contractText : "Sem detalhes adicionais.") + "</div>",
+      "</div>",
+      "</div>"
+    ].join("");
+  }
+
+  function renderOutboundViews(payload) {
+    currentOutboundAnalysis = payload || null;
+
+    if (!currentOutboundAnalysis) {
+      renderOutboundEmptyState("Selecione contrato e proposta para iniciar a validacao.");
+      return;
+    }
+
+    var analysis = currentOutboundAnalysis.analysis || {};
+    setOutboundSelectionValues(
+      analysis.source_document_id || analysis.document_id || currentOutboundContractId,
+      analysis.reference_document_id || currentOutboundProposalId
+    );
+    renderOutboundCompareView(currentOutboundAnalysis);
+    renderOutboundIssuesView(currentOutboundAnalysis);
+    renderOutboundVerdictView(currentOutboundAnalysis);
   }
 
   function getOverviewDocumentCountLabel(totalDocuments) {
@@ -3097,6 +3715,7 @@
     renderSelectOptions(riskDocSelect, filteredDocuments);
     renderSelectOptions(guidedDocSelect, filteredDocuments);
     renderSelectOptions(resultsDocSelect, filteredDocuments);
+    renderOutboundDocumentOptions(currentDocuments);
     renderOverviewActivity(filterOverviewActivityItems(overviewActivityItems));
     renderAuditHistory(filterAuditHistoryItems(auditHistoryItems));
     refreshOverviewComparisons(filteredDocuments);
@@ -4178,6 +4797,7 @@
     if (fileInput) {
       fileInput.value = "";
     }
+    clearPastedContractFields();
     if (newAnalysisBtn) {
       newAnalysisBtn.style.display = "none";
     }
@@ -4240,14 +4860,41 @@ function readFilePayload(file) {
     return "application/octet-stream";
   }
 
-  async function uploadSelectedFile(file) {
-    var extension = getFileExtension(file && file.name);
-
-    if (!file) return;
-    if (["pdf", "docx", "txt"].indexOf(extension) === -1) {
-      renderAnalysisEmptyState("Formato não suportado", "Envie um arquivo PDF, DOCX ou TXT.");
-      return;
+  function clearPastedContractFields() {
+    if (pastedContractNameInput) {
+      pastedContractNameInput.value = "";
     }
+    if (pastedContractTextInput) {
+      pastedContractTextInput.value = "";
+    }
+  }
+
+  function buildPastedContractPayload() {
+    var contractText = pastedContractTextInput ? String(pastedContractTextInput.value || "").trim() : "";
+    var suggestedName = pastedContractNameInput ? String(pastedContractNameInput.value || "").trim() : "";
+    var defaultName = "contrato-colado-" + new Date().toISOString().slice(0, 10) + ".txt";
+    var originalName = suggestedName || defaultName;
+
+    if (!contractText) {
+      throw new Error("Cole o texto do contrato antes de enviar.");
+    }
+
+    if (!/\.txt$/i.test(originalName)) {
+      originalName += ".txt";
+    }
+
+    return {
+      originalName: originalName,
+      mimeType: "text/plain",
+      extension: "txt",
+      sizeBytes: new TextEncoder().encode(contractText).length,
+      textContent: contractText,
+      base64Content: ""
+    };
+  }
+
+  async function submitDocumentPayload(payload, options) {
+    var config = options || {};
 
     if (uploadZone) {
       uploadZone.classList.add("processing");
@@ -4257,19 +4904,32 @@ function readFilePayload(file) {
     }
 
     try {
-      progressFill.style.width = "20%";
-      progressText.textContent = "Preparando contrato...";
-      var payload = await readFilePayload(file);
-      progressFill.style.width = "60%";
-      progressText.textContent = "Enviando contrato...";
+      if (progressFill) {
+        progressFill.style.width = "20%";
+      }
+      if (progressText) {
+        progressText.textContent = config.preparingLabel || "Preparando contrato...";
+      }
+
+      if (progressFill) {
+        progressFill.style.width = "60%";
+      }
+      if (progressText) {
+        progressText.textContent = config.uploadingLabel || "Enviando contrato...";
+      }
 
       var created = await requestJson("/api/documents", {
         method: "POST",
         body: JSON.stringify(payload)
       });
 
-      progressFill.style.width = "100%";
-      progressText.textContent = "Contrato enviado. Carregando analise...";
+      if (progressFill) {
+        progressFill.style.width = "100%";
+      }
+      if (progressText) {
+        progressText.textContent = config.successLabel || "Contrato enviado. Carregando analise...";
+      }
+
       currentDocumentId = created && created.document ? created.document.id : "";
       leaveAnalyzeUploadMode();
       await loadDocuments();
@@ -4277,7 +4937,7 @@ function readFilePayload(file) {
         newAnalysisBtn.style.display = "";
       }
 
-      setTimeout(function () {
+      window.setTimeout(function () {
         if (uploadZone) {
           uploadZone.classList.remove("processing", "drag");
         }
@@ -4295,19 +4955,62 @@ function readFilePayload(file) {
         if (fileInput) {
           fileInput.value = "";
         }
+        if (config.resetPastedFields) {
+          clearPastedContractFields();
+        }
       }, 900);
     } catch (error) {
       enterAnalyzeUploadMode();
-      progressFill.style.width = "100%";
-      progressFill.style.background = "var(--danger)";
-      progressText.textContent = error.message || "Falha ao enviar o contrato.";
-      progressText.style.color = "var(--danger)";
+      if (progressFill) {
+        progressFill.style.width = "100%";
+        progressFill.style.background = "var(--danger)";
+      }
+      if (progressText) {
+        progressText.textContent = error.message || "Falha ao enviar o contrato.";
+        progressText.style.color = "var(--danger)";
+      }
       if (uploadZone) {
         uploadZone.classList.remove("processing");
       }
       if (fileInput) {
         fileInput.value = "";
       }
+      throw error;
+    }
+  }
+
+  async function uploadSelectedFile(file) {
+    var extension = getFileExtension(file && file.name);
+
+    if (!file) return;
+    if (["pdf", "docx", "txt"].indexOf(extension) === -1) {
+      renderAnalysisEmptyState("Formato não suportado", "Envie um arquivo PDF, DOCX ou TXT.");
+      return;
+    }
+
+    try {
+      var payload = await readFilePayload(file);
+      await submitDocumentPayload(payload, {
+        preparingLabel: "Preparando contrato...",
+        uploadingLabel: "Enviando contrato...",
+        successLabel: "Contrato enviado. Carregando analise..."
+      });
+    } catch (error) {
+      return;
+    }
+  }
+
+  async function uploadPastedContractText() {
+    try {
+      var payload = buildPastedContractPayload();
+      await submitDocumentPayload(payload, {
+        preparingLabel: "Preparando texto colado...",
+        uploadingLabel: "Enviando texto do contrato...",
+        successLabel: "Texto enviado. Carregando analise...",
+        resetPastedFields: true
+      });
+    } catch (error) {
+      renderAnalysisEmptyState("Texto nao enviado", error.message || "Nao foi possivel enviar o texto agora.");
     }
   }
 
@@ -4376,6 +5079,106 @@ function readFilePayload(file) {
         error.message || "Não foi possível gerar a análise agora."
       );
     }
+  }
+
+  async function loadLatestOutboundAnalysis(documentId) {
+    var targetDocumentId = documentId || currentOutboundContractId;
+
+    if (!targetDocumentId) {
+      currentOutboundAnalysis = null;
+      renderOutboundEmptyState("Selecione um contrato para consultar a validacao de envio.");
+      return null;
+    }
+
+    var response = await requestJsonDetailed(
+      "/api/documents/" + encodeURIComponent(targetDocumentId) + "/outbound-analysis",
+      { method: "GET" }
+    );
+    var message = response && response.payload && response.payload.message
+      ? response.payload.message
+      : "";
+
+    if (!response.ok) {
+      if (response.status === 400 && message === "No outbound analysis found for this document.") {
+        currentOutboundAnalysis = null;
+        renderOutboundEmptyState("Nenhuma validacao de envio foi gerada para este contrato ainda.");
+        return null;
+      }
+
+      throw new Error(message || "Nao foi possivel carregar a validacao de envio.");
+    }
+
+    renderOutboundViews(response.payload);
+    return response.payload;
+  }
+
+  async function runOutboundAnalysis() {
+    if (!currentOutboundContractId) {
+      setOutboundFeedback("Escolha um contrato principal para validar.", "error");
+      return;
+    }
+
+    if (!currentOutboundProposalId) {
+      setOutboundFeedback("Escolha uma proposta de referencia para comparar.", "error");
+      return;
+    }
+
+    if (currentOutboundContractId === currentOutboundProposalId) {
+      setOutboundFeedback("Contrato e proposta precisam ser arquivos diferentes.", "error");
+      return;
+    }
+
+    if (outboundStartButton) {
+      outboundStartButton.disabled = true;
+    }
+    setOutboundFeedback("Rodando a validacao de envio...", "info");
+
+    try {
+      var created = await requestJson("/api/outbound-analyses", {
+        method: "POST",
+        body: JSON.stringify({
+          contractDocumentId: currentOutboundContractId,
+          proposalDocumentId: currentOutboundProposalId,
+          internalNotes: outboundNotesInput ? outboundNotesInput.value || "" : ""
+        })
+      });
+
+      renderOutboundViews(created);
+      setOutboundFeedback("Validacao concluida. Abrimos a comparacao para voce revisar os pontos principais.", "info");
+      leaveAnalyzeUploadMode();
+      switchPage("outbound-compare");
+    } catch (error) {
+      setOutboundFeedback(error.message || "Nao foi possivel concluir a validacao agora.", "error");
+    } finally {
+      if (outboundStartButton) {
+        outboundStartButton.disabled = currentDocuments.length < 2;
+      }
+    }
+  }
+
+  async function handleOutboundPageActivated(pageName) {
+    var hasDocuments = currentDocuments.length > 0;
+    var analysisSourceId = currentOutboundAnalysis && currentOutboundAnalysis.analysis
+      ? (currentOutboundAnalysis.analysis.source_document_id || currentOutboundAnalysis.analysis.document_id || "")
+      : "";
+
+    renderOutboundDocumentOptions(currentDocuments);
+
+    if (!hasDocuments) {
+      renderOutboundEmptyState("Envie pelo menos dois documentos para validar contrato e proposta.");
+      return;
+    }
+
+    if (!currentOutboundAnalysis || !currentOutboundAnalysis.analysis || (currentOutboundContractId && analysisSourceId && analysisSourceId !== currentOutboundContractId)) {
+      try {
+        await loadLatestOutboundAnalysis(currentOutboundContractId || chooseDefaultOutboundContractId());
+      } catch (error) {
+        renderOutboundEmptyState(error.message || "Nao foi possivel carregar a validacao de envio.");
+      }
+      return;
+    }
+
+    renderOutboundViews(currentOutboundAnalysis);
   }
 
   function renderSearchEmptyState() {
@@ -5178,6 +5981,27 @@ function readFilePayload(file) {
         openAnalyzeUploadPicker();
       });
     }
+
+    if (pastedContractSubmitBtn) {
+      pastedContractSubmitBtn.addEventListener("click", function () {
+        uploadPastedContractText();
+      });
+    }
+
+    if (pastedContractClearBtn) {
+      pastedContractClearBtn.addEventListener("click", function () {
+        clearPastedContractFields();
+      });
+    }
+
+    if (pastedContractTextInput) {
+      pastedContractTextInput.addEventListener("keydown", function (event) {
+        if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+          event.preventDefault();
+          uploadPastedContractText();
+        }
+      });
+    }
   }
 
   function bindSelects() {
@@ -5190,6 +6014,42 @@ function readFilePayload(file) {
         }
       });
     });
+  }
+
+  function bindOutboundFlow() {
+    [outboundContractSelect, outboundCompareContractSelect].forEach(function (select) {
+      if (!select) return;
+      select.addEventListener("change", function () {
+        setOutboundSelectionValues(select.value || "", currentOutboundProposalId);
+        if (currentOutboundContractId === currentOutboundProposalId) {
+          setOutboundSelectionValues(currentOutboundContractId, chooseDefaultOutboundProposalId(currentOutboundContractId));
+        }
+        currentOutboundAnalysis = null;
+        if (getVisiblePageName().indexOf("outbound-") === 0) {
+          loadLatestOutboundAnalysis(currentOutboundContractId).catch(function (error) {
+            renderOutboundEmptyState(error.message || "Nao foi possivel carregar a validacao deste contrato.");
+          });
+        }
+      });
+    });
+
+    [outboundProposalSelect, outboundCompareProposalSelect].forEach(function (select) {
+      if (!select) return;
+      select.addEventListener("change", function () {
+        setOutboundSelectionValues(currentOutboundContractId, select.value || "");
+        currentOutboundAnalysis = null;
+        setOutboundFeedback("", "");
+        if (getVisiblePageName().indexOf("outbound-") === 0) {
+          renderOutboundEmptyState("Selecao atualizada. Rode a validacao para comparar esta proposta com o contrato.");
+        }
+      });
+    });
+
+    if (outboundStartButton) {
+      outboundStartButton.addEventListener("click", function () {
+        runOutboundAnalysis();
+      });
+    }
   }
 
   function bindGuidedTabs() {
@@ -5344,6 +6204,7 @@ function readFilePayload(file) {
   bindDocumentTables();
   bindUpload();
   bindSelects();
+  bindOutboundFlow();
   bindGuidedTabs();
   bindInteractivePanels();
   bindAuth();

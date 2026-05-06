@@ -6,6 +6,7 @@ var handlers = {
   detail: require("../routes-src/documents/[id]"),
   file: require("../routes-src/documents/[id]/file"),
   analysis: require("../routes-src/documents/[id]/analysis"),
+  outboundAnalysis: require("../routes-src/documents/[id]/outbound-analysis"),
   status: require("../routes-src/documents/[id]/status"),
   restore: require("../routes-src/documents/[id]/restore")
 };

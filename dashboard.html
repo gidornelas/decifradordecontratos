@@ -79,7 +79,7 @@
         Contratos
       </button>
       <div class="nav-divider"></div>
-      <div class="nav-section-label">Fluxo de análise</div>
+      <div class="nav-section-label">Análise recebida</div>
       <button class="nav-item" data-page="analyze">
         <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Enviar contrato
@@ -97,6 +97,24 @@
       <button class="nav-item" data-page="results">
         <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         Resumo final
+      </button>
+      <div class="nav-divider"></div>
+      <div class="nav-section-label">Preparação para envio</div>
+      <button class="nav-item" data-page="outbound-validate">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.86 0 3.59.56 5.02 1.53"/><path d="M16 3h5v5"/></svg>
+        Validar contrato
+      </button>
+      <button class="nav-item" data-page="outbound-compare">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/><path d="M9 9h6"/><path d="M9 15h6"/></svg>
+        Comparar com proposta
+      </button>
+      <button class="nav-item" data-page="outbound-issues">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        Pendências para envio
+      </button>
+      <button class="nav-item" data-page="outbound-verdict">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg>
+        Parecer final
       </button>
       <div class="nav-divider"></div>
       <div class="nav-section-label">Conta e histórico</div>
@@ -202,6 +220,10 @@
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       Contratos
     </button>
+    <button class="mobile-shortcut" data-nav="outbound-validate" type="button">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.86 0 3.59.56 5.02 1.53"/></svg>
+      Validar envio
+    </button>
     <button class="mobile-shortcut" data-nav="risks" type="button">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
       Riscos
@@ -297,6 +319,7 @@
             <button class="quick-card" data-nav="risks"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>Ver Riscos</button>
             <button class="quick-card" data-nav="guided"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Leitura Guiada</button>
             <button class="quick-card" data-nav="results"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Resultados</button>
+            <button class="quick-card" data-nav="outbound-validate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.86 0 3.59.56 5.02 1.53"/></svg>Validar envio</button>
           </div>
         </div>
         <div class="card">
@@ -422,6 +445,28 @@
           <span class="upload-format">PDF</span>
           <span class="upload-format">DOCX</span>
           <span class="upload-format">TXT</span>
+        </div>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <div class="section-subtitle">Ou cole o texto do contrato</div>
+        <p class="upload-sub" style="margin-top:10px">Se você já tiver o conteúdo em mãos, pode colar o texto completo aqui e enviar direto para análise.</p>
+        <div class="login-field" style="margin-top:18px">
+          <label class="login-label" for="pasted-contract-name">Nome do contrato</label>
+          <input class="login-input" id="pasted-contract-name" type="text" placeholder="ex.: contrato_servico_cliente_x.txt">
+        </div>
+        <div class="login-field" style="margin-bottom:0">
+          <label class="login-label" for="pasted-contract-text">Texto do contrato</label>
+          <textarea class="login-input" id="pasted-contract-text" rows="10" placeholder="Cole aqui o texto integral do contrato para analisar sem arquivo."></textarea>
+        </div>
+        <div class="page-actions" style="margin-top:18px;justify-content:flex-start">
+          <button class="btn btn-outline" id="pasted-contract-clear-btn" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Limpar texto
+          </button>
+          <button class="btn btn-primary" id="pasted-contract-submit-btn" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Enviar texto colado
+          </button>
         </div>
       </div>
       <div class="progress-wrap" id="upload-progress">
@@ -840,6 +885,290 @@
         <div class="verdict">
           <div class="verdict-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
           <div><div class="verdict-title">Não assine sem negociar</div><p class="verdict-text">Este contrato contém <strong>3 cláusulas de risco crítico</strong>. Recomendamos negociar as cláusulas 4.2, 8.3 e 5.1 antes de assinar. Após a negociação, o contrato pode ser considerado seguro.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLUXO DO EMISSOR: VALIDAR -->
+    <div class="page" id="page-outbound-validate" data-screen-label="Validar envio">
+      <div class="page-head">
+        <div>
+          <h2 class="page-title">Validar contrato</h2>
+          <p class="page-intro">Organize os insumos da revisão antes de enviar o contrato ao cliente. Aqui a análise olha para coerência comercial, clareza e prontidão de envio.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline" data-nav="documents" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Abrir contratos
+          </button>
+          <button class="btn btn-primary" id="outbound-start-btn" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+            Rodar validacao
+          </button>
+        </div>
+      </div>
+      <div class="analysis-flow-nav" aria-label="Etapas da validação para envio">
+        <button class="analysis-flow-tab" data-nav="outbound-validate" data-analysis-page="outbound-validate" type="button">1. Validar contrato</button>
+        <button class="analysis-flow-tab" data-nav="outbound-compare" data-analysis-page="outbound-compare" type="button">2. Comparar com proposta</button>
+        <button class="analysis-flow-tab" data-nav="outbound-issues" data-analysis-page="outbound-issues" type="button">3. Pendências para envio</button>
+        <button class="analysis-flow-tab" data-nav="outbound-verdict" data-analysis-page="outbound-verdict" type="button">4. Parecer final</button>
+      </div>
+      <div class="widgets">
+        <div class="card">
+          <div class="section-subtitle">Escopo da revisão</div>
+          <p class="upload-sub" style="margin-bottom:18px">Este fluxo foi separado para a pessoa que prepara o contrato antes do envio. O objetivo não é só identificar risco, mas verificar se o documento está coerente com o combinado comercial.</p>
+          <div class="activity-item" style="margin-top:0">
+            <span class="activity-dot activity-dot--safe"></span>
+            <div>
+              <div class="activity-text"><strong>Contrato final</strong> precisa estar na versão que será enviada ao cliente</div>
+              <div class="activity-time">Use a versão mais recente do documento principal.</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <span class="activity-dot activity-dot--warn"></span>
+            <div>
+              <div class="activity-text"><strong>Proposta comercial</strong> serve como referência de coerência</div>
+              <div class="activity-time">Valores, escopo, prazo e condições devem bater com o contrato.</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <span class="activity-dot activity-dot--default"></span>
+            <div>
+              <div class="activity-text"><strong>Observações internas</strong> entram como contexto complementar</div>
+              <div class="activity-time">Útil para exceções aprovadas fora da proposta.</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-subtitle">Insumos da validacao</div>
+          <div class="login-field" style="margin-top:18px">
+            <label class="login-label" for="outbound-contract-select">Contrato principal</label>
+            <select class="login-input" id="outbound-contract-select"></select>
+          </div>
+          <div class="login-field">
+            <label class="login-label" for="outbound-proposal-select">Proposta de referencia</label>
+            <select class="login-input" id="outbound-proposal-select"></select>
+          </div>
+          <div class="login-field" style="margin-bottom:0">
+            <label class="login-label" for="outbound-notes">Observacoes internas</label>
+            <textarea class="login-input" id="outbound-notes" rows="4" placeholder="Excecoes aprovadas, alinhamentos comerciais ou contexto adicional."></textarea>
+          </div>
+          <div class="inline-feedback" id="outbound-feedback" hidden style="margin-top:18px"></div>
+        </div>
+        <div class="card">
+          <div class="section-subtitle">Critérios da validação</div>
+          <div class="outbound-score-bars" style="margin-top:18px">
+            <div class="bar-row"><span class="bar-label">Coerência com proposta</span><div class="bar-track"><div class="bar-fill bar-fill--safe" style="width:84%"></div></div><span class="bar-count">84%</span></div>
+            <div class="bar-row"><span class="bar-label">Clareza para envio</span><div class="bar-track"><div class="bar-fill bar-fill--warn" style="width:61%"></div></div><span class="bar-count">61%</span></div>
+            <div class="bar-row"><span class="bar-label">Pendências abertas</span><div class="bar-track"><div class="bar-fill bar-fill--danger" style="width:38%"></div></div><span class="bar-count">4 itens</span></div>
+          </div>
+          <p class="history-note" style="margin-top:18px">Nesta primeira entrega visual, esses indicadores funcionam como estrutura de produto. A integração com dados reais entrará na camada de backend do fluxo do emissor.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLUXO DO EMISSOR: COMPARAR -->
+    <div class="page" id="page-outbound-compare" data-screen-label="Comparar com proposta">
+      <div class="page-head">
+        <div>
+          <h2 class="page-title">Comparar com proposta</h2>
+          <p class="page-intro">Confronte o que foi prometido comercialmente com o que realmente foi escrito no contrato antes do envio ao cliente.</p>
+        </div>
+        <div class="page-actions">
+          <select class="app-select" id="outbound-compare-contract-select" title="Contrato base"></select>
+          <select class="app-select" id="outbound-compare-proposal-select" title="Proposta de referência"></select>
+        </div>
+      </div>
+      <div class="analysis-flow-nav" aria-label="Etapas da validação para envio">
+        <button class="analysis-flow-tab" data-nav="outbound-validate" data-analysis-page="outbound-validate" type="button">1. Validar contrato</button>
+        <button class="analysis-flow-tab" data-nav="outbound-compare" data-analysis-page="outbound-compare" type="button">2. Comparar com proposta</button>
+        <button class="analysis-flow-tab" data-nav="outbound-issues" data-analysis-page="outbound-issues" type="button">3. Pendências para envio</button>
+        <button class="analysis-flow-tab" data-nav="outbound-verdict" data-analysis-page="outbound-verdict" type="button">4. Parecer final</button>
+      </div>
+      <div class="results-header">
+        <div style="display:flex;align-items:center;gap:14px;flex-shrink:0">
+          <div class="ring ring--warn" style="width:64px;height:64px;flex-shrink:0">
+            <div style="text-align:center"><div class="ring-val" id="outbound-compare-score">84</div><div class="ring-max">/100</div></div>
+          </div>
+          <div><div class="results-score-label" id="outbound-compare-label">Coerência boa, com ajustes</div><div class="results-score-desc" id="outbound-compare-desc">A maior parte do combinado aparece no contrato, mas ainda há desvios relevantes</div></div>
+        </div>
+        <div class="results-meta">
+          <div class="results-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg><div><div class="results-meta-label">Contrato</div><div class="results-meta-value" id="outbound-compare-contract-name">contrato_servico_final.docx</div></div></div>
+          <div class="results-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/></svg><div><div class="results-meta-label">Proposta</div><div class="results-meta-value" id="outbound-compare-proposal-name">proposta_comercial_v3.pdf</div></div></div>
+          <div class="results-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg><div><div class="results-meta-label">Divergências</div><div class="results-meta-value" id="outbound-compare-mismatch-count">3 pontos principais</div></div></div>
+        </div>
+      </div>
+      <div class="results-section">
+        <div class="analysis-section-title">Mapa de coerência</div>
+        <div class="table" id="outbound-comparison-table">
+          <div class="table-head"><span>Tema</span><span>Proposta</span><span>Contrato</span><span>Status</span><span>Ação</span></div>
+          <div class="table-row">
+            <span class="table-type">Escopo</span>
+            <span class="table-date">Suporte mensal + onboarding</span>
+            <span class="table-date">Somente suporte mensal</span>
+            <span class="badge badge--attention"><span class="badge-dot"></span>Parcial</span>
+            <span class="table-actions"><button class="table-action-btn" data-nav="outbound-issues" type="button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span>
+          </div>
+          <div class="table-row">
+            <span class="table-type">Prazo</span>
+            <span class="table-date">12 meses</span>
+            <span class="table-date">12 meses</span>
+            <span class="badge badge--safe"><span class="badge-dot"></span>Coerente</span>
+            <span class="table-actions"><button class="table-action-btn" data-nav="outbound-verdict" type="button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span>
+          </div>
+          <div class="table-row">
+            <span class="table-type">Valor</span>
+            <span class="table-date">R$ 18.000 em 3 parcelas</span>
+            <span class="table-date">R$ 21.000 em 3 parcelas</span>
+            <span class="badge badge--critical"><span class="badge-dot"></span>Divergente</span>
+            <span class="table-actions"><button class="table-action-btn" data-nav="outbound-issues" type="button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span>
+          </div>
+          <div class="table-row">
+            <span class="table-type">SLA</span>
+            <span class="table-date">Resposta em até 1 dia útil</span>
+            <span class="table-date">Sem SLA explícito</span>
+            <span class="badge badge--attention"><span class="badge-dot"></span>Ausente</span>
+            <span class="table-actions"><button class="table-action-btn" data-nav="outbound-issues" type="button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLUXO DO EMISSOR: PENDÊNCIAS -->
+    <div class="page" id="page-outbound-issues" data-screen-label="Pendências para envio">
+      <div class="page-head">
+        <div>
+          <h2 class="page-title">Pendências para envio</h2>
+          <p class="page-intro">Veja o que ainda precisa ser corrigido, confirmado ou aprovado antes de mandar o contrato para o cliente.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline" data-nav="outbound-compare" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Voltar para comparação
+          </button>
+        </div>
+      </div>
+      <div class="analysis-flow-nav" aria-label="Etapas da validação para envio">
+        <button class="analysis-flow-tab" data-nav="outbound-validate" data-analysis-page="outbound-validate" type="button">1. Validar contrato</button>
+        <button class="analysis-flow-tab" data-nav="outbound-compare" data-analysis-page="outbound-compare" type="button">2. Comparar com proposta</button>
+        <button class="analysis-flow-tab" data-nav="outbound-issues" data-analysis-page="outbound-issues" type="button">3. Pendências para envio</button>
+        <button class="analysis-flow-tab" data-nav="outbound-verdict" data-analysis-page="outbound-verdict" type="button">4. Parecer final</button>
+      </div>
+      <div class="risk-cards-grid" id="outbound-issues-grid">
+        <div class="risk-card risk-card--critical">
+          <div class="risk-card__head"><span class="risk-badge risk-badge--critical"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Crítico</span><span class="risk-clause">Financeiro</span></div>
+          <h3>Valor divergente da proposta</h3>
+          <p>O contrato traz <strong>R$ 21.000</strong>, enquanto a proposta aprovada indica <strong>R$ 18.000</strong>. O envio assim tende a gerar atrito imediato.</p>
+        </div>
+        <div class="risk-card risk-card--critical">
+          <div class="risk-card__head"><span class="risk-badge risk-badge--critical"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Crítico</span><span class="risk-clause">Campos</span></div>
+          <h3>Placeholder não preenchido</h3>
+          <p>A cláusula de assinatura ainda contém <strong>[NOME DO CLIENTE]</strong>, sinal de que o documento não está pronto para seguir.</p>
+        </div>
+        <div class="risk-card risk-card--attention">
+          <div class="risk-card__head"><span class="risk-badge risk-badge--attention"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>Atenção</span><span class="risk-clause">Escopo</span></div>
+          <h3>Onboarding prometido não aparece</h3>
+          <p>O texto da proposta cita onboarding inicial, mas o contrato não transforma isso em obrigação contratual clara.</p>
+        </div>
+        <div class="risk-card risk-card--attention">
+          <div class="risk-card__head"><span class="risk-badge risk-badge--attention"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>Atenção</span><span class="risk-clause">SLA</span></div>
+          <h3>Padrão de atendimento sem prazo</h3>
+          <p>A proposta fala em resposta em até 1 dia útil, mas o contrato deixa o suporte sem marco objetivo de atendimento.</p>
+        </div>
+      </div>
+      <div class="results-section">
+        <div class="analysis-section-title">Checklist operacional</div>
+        <div class="checklist-list" id="outbound-checklist-list">
+          <div class="checklist-item"><label class="checklist-label"><input type="checkbox"><div><div class="checklist-title">Corrigir valor comercial</div><div class="checklist-desc">Alinhar contrato com a proposta aprovada ou registrar exceção validada internamente.</div></div></label></div>
+          <div class="checklist-item"><label class="checklist-label"><input type="checkbox"><div><div class="checklist-title">Remover placeholders</div><div class="checklist-desc">Preencher nome do cliente, dados societários e bloco de assinatura.</div></div></label></div>
+          <div class="checklist-item"><label class="checklist-label"><input type="checkbox"><div><div class="checklist-title">Trazer onboarding para o texto contratual</div><div class="checklist-desc">Garantir que o escopo prometido esteja escrito de forma exigível.</div></div></label></div>
+          <div class="checklist-item"><label class="checklist-label"><input type="checkbox"><div><div class="checklist-title">Definir SLA contratual</div><div class="checklist-desc">Explicitar prazos de resposta e suporte para evitar ambiguidade no envio.</div></div></label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLUXO DO EMISSOR: PARECER -->
+    <div class="page" id="page-outbound-verdict" data-screen-label="Parecer final">
+      <div class="page-head">
+        <div>
+          <h2 class="page-title">Parecer final</h2>
+          <p class="page-intro">Consolidação final da prontidão de envio do contrato, separada da análise tradicional de riscos do documento recebido.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline" data-nav="outbound-issues" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Rever pendências
+          </button>
+          <button class="btn btn-primary" data-nav="outbound-validate" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/></svg>
+            Reiniciar validação
+          </button>
+        </div>
+      </div>
+      <div class="analysis-flow-nav" aria-label="Etapas da validação para envio">
+        <button class="analysis-flow-tab" data-nav="outbound-validate" data-analysis-page="outbound-validate" type="button">1. Validar contrato</button>
+        <button class="analysis-flow-tab" data-nav="outbound-compare" data-analysis-page="outbound-compare" type="button">2. Comparar com proposta</button>
+        <button class="analysis-flow-tab" data-nav="outbound-issues" data-analysis-page="outbound-issues" type="button">3. Pendências para envio</button>
+        <button class="analysis-flow-tab" data-nav="outbound-verdict" data-analysis-page="outbound-verdict" type="button">4. Parecer final</button>
+      </div>
+      <div class="results-header">
+        <div style="display:flex;align-items:center;gap:14px;flex-shrink:0">
+          <div class="ring ring--warn" style="width:64px;height:64px;flex-shrink:0">
+            <div style="text-align:center"><div class="ring-val" id="outbound-verdict-score">68</div><div class="ring-max">/100</div></div>
+          </div>
+          <div><div class="results-score-label" id="outbound-verdict-label">Enviar com ressalvas</div><div class="results-score-desc" id="outbound-verdict-desc">Há base para envio, mas somente depois de corrigir os pontos críticos destacados</div></div>
+        </div>
+        <div class="results-meta">
+          <div class="results-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/></svg><div><div class="results-meta-label">Prontidão</div><div class="results-meta-value" id="outbound-verdict-readiness">68/100</div></div></div>
+          <div class="results-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg><div><div class="results-meta-label">Críticos</div><div class="results-meta-value" id="outbound-verdict-critical-count">2 bloqueadores</div></div></div>
+          <div class="results-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg><div><div class="results-meta-label">Atenção</div><div class="results-meta-value" id="outbound-verdict-attention-count">2 ajustes</div></div></div>
+        </div>
+      </div>
+      <div class="results-section">
+        <div class="analysis-section-title">Parecer executivo</div>
+        <div class="verdict" id="outbound-verdict-executive">
+          <div class="verdict-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <div><div class="verdict-title" id="outbound-verdict-title">Não enviar ainda na forma atual</div><p class="verdict-text" id="outbound-verdict-text">O contrato já tem estrutura suficiente para avançar, mas ainda não deveria ser enviado ao cliente enquanto houver divergência de valor e placeholder em aberto. Após esses ajustes, a recomendação pode mudar para <strong>pronto para envio</strong>.</p></div>
+        </div>
+      </div>
+      <div class="widgets">
+        <div class="card">
+          <div class="section-subtitle">O que está bom</div>
+          <div id="outbound-verdict-good-list">
+          <div class="activity-item" style="margin-top:16px">
+            <span class="activity-dot activity-dot--safe"></span>
+            <div>
+              <div class="activity-text"><strong>Prazo contratual coerente</strong> com a proposta</div>
+              <div class="activity-time">A vigência de 12 meses está alinhada entre os documentos.</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <span class="activity-dot activity-dot--safe"></span>
+            <div>
+              <div class="activity-text"><strong>Estrutura jurídica principal</strong> já está consistente</div>
+              <div class="activity-time">Objeto, vigência e obrigações-base aparecem organizados.</div>
+            </div>
+          </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-subtitle">O que bloqueia o envio</div>
+          <div id="outbound-verdict-blockers-list">
+          <div class="activity-item" style="margin-top:16px">
+            <span class="activity-dot activity-dot--danger"></span>
+            <div>
+              <div class="activity-text"><strong>Valor comercial divergente</strong> da proposta aprovada</div>
+              <div class="activity-time">Pode comprometer confiança e gerar retrabalho imediato.</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <span class="activity-dot activity-dot--danger"></span>
+            <div>
+              <div class="activity-text"><strong>Campo de cliente em aberto</strong> no bloco final</div>
+              <div class="activity-time">Indica documento ainda incompleto para envio externo.</div>
+            </div>
+          </div>
+          </div>
         </div>
       </div>
     </div>

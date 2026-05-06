@@ -2,6 +2,7 @@ var http = require("../../lib/http");
 var auth = require("../../lib/auth");
 var db = require("../../lib/db");
 var observability = require("../../lib/observability");
+var schemaCapabilities = require("../../lib/schema-capabilities");
 
 var ANALYSIS_KIND_RECEIVED = "received_contract_review";
 
@@ -28,6 +29,17 @@ module.exports = async function handler(req, res) {
 
     var userId = authContext.session.user_id;
     currentUserId = userId;
+    var capabilities = await schemaCapabilities.getAnalysisSchemaCapabilities();
+    var countsParams = [userId];
+    var completedKindClause = "";
+    var criticalKindClause = "";
+
+    if (capabilities.hasAnalysisKind) {
+      countsParams.push(ANALYSIS_KIND_RECEIVED);
+      completedKindClause = "and a.analysis_kind = $2";
+      criticalKindClause = "and a.analysis_kind = $2";
+    }
+
     var countsResult = await db.query(
       [
         "select",
@@ -37,7 +49,7 @@ module.exports = async function handler(req, res) {
         "from analyses a",
         "join documents d on d.id = a.document_id",
         "where a.user_id = $1 and a.status = 'completed' and d.deleted_at is null",
-        "and coalesce(a.analysis_kind, $2) = $2",
+        completedKindClause,
         ") as completed_analyses,",
         "(",
         "select count(*)::int",
@@ -45,10 +57,10 @@ module.exports = async function handler(req, res) {
         "join analyses a on a.id = r.analysis_id",
         "join documents d on d.id = a.document_id",
         "where a.user_id = $1 and r.severity = 'critical' and d.deleted_at is null",
-        "and coalesce(a.analysis_kind, $2) = $2",
+        criticalKindClause,
         ") as critical_risks"
       ].join(" "),
-      [userId, ANALYSIS_KIND_RECEIVED]
+      countsParams
     );
 
     var recentDocumentsResult = await db.query(

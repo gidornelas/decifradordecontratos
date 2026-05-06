@@ -2,6 +2,7 @@ var http = require("../../lib/http");
 var auth = require("../../lib/auth");
 var db = require("../../lib/db");
 var observability = require("../../lib/observability");
+var schemaCapabilities = require("../../lib/schema-capabilities");
 
 var ANALYSIS_KIND_RECEIVED = "received_contract_review";
 
@@ -28,6 +29,15 @@ module.exports = async function handler(req, res) {
 
     currentUserId = authContext.session.user_id;
 
+    var capabilities = await schemaCapabilities.getAnalysisSchemaCapabilities();
+    var queryParams = [currentUserId];
+    var whereKindClause = "";
+
+    if (capabilities.hasAnalysisKind) {
+      queryParams.push(ANALYSIS_KIND_RECEIVED);
+      whereKindClause = "and a.analysis_kind = $2";
+    }
+
     var result = await db.query(
       [
         "select severity, count(*)::int as count",
@@ -35,10 +45,10 @@ module.exports = async function handler(req, res) {
         "join analyses a on a.id = r.analysis_id",
         "join documents d on d.id = a.document_id",
         "where a.user_id = $1 and d.deleted_at is null",
-        "and coalesce(a.analysis_kind, $2) = $2",
+        whereKindClause,
         "group by severity"
       ].join(" "),
-      [currentUserId, ANALYSIS_KIND_RECEIVED]
+      queryParams
     );
 
     var distribution = {

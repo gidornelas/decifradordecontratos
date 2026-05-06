@@ -95,6 +95,7 @@ module.exports = async function handler(req, res) {
       error &&
       error.message &&
       (
+        error.message === "Outbound validation is not available until the database migration is applied." ||
         error.message === "Contract document not found." ||
         error.message === "Proposal document not found." ||
         error.message === "Contract document and proposal document must be different files." ||
